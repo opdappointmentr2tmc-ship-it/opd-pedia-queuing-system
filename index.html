@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Queue System Multi-Prefix Series</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Tahoma,sans-serif;}
+body{background:#f0f2f5;padding:20px;color:#333;display:flex;flex-direction:column;min-height:100vh;}
+#headerBar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+h1{margin-bottom:20px;color:#222;}
+#tablesContainer{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+#tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:25px;flex:1;}
+.table-box{background:rgba(255,255,255,0.9);padding:25px;border-radius:18px;box-shadow:0 8px 25px rgba(0,0,0,0.1);text-align:center;}
+.table-box.pulse {animation: pulseRecall 1s ease-in-out;}
+@keyframes pulseRecall {0% { box-shadow: 0 0 20px rgba(23,162,184,0.8); transform: scale(1);}50% { box-shadow: 0 0 40px rgba(23,162,184,0.9); transform: scale(1.05);}100% { box-shadow: 0 0 20px rgba(23,162,184,0.8); transform: scale(1);}}
+.title{font-size:30px;font-weight:800;margin-bottom:10px;color:#222;}
+.prefix-dropdown{width:80%;padding:8px;border-radius:6px;margin-bottom:15px;font-size:16px;}
+.queue-number{font-size:80px;font-weight:900;padding:20px;margin-bottom:20px;background:#e0e4e8;border-radius:15px;color:#222;}
+.queue-number.done-text{color:grey;font-style:italic;}
+button{padding:14px;margin-top:10px;border:none;border-radius:10px;font-size:18px;font-weight:700;color:white;cursor:pointer;}
+button:disabled{opacity:0.4;cursor:not-allowed;}
+.next-btn{background:#007bff;width:100%;}
+.done-btn{background:#6c757d;width:100%;}
+.owc-btn{background:#d9534f;width:100%;}
+.recall-btn{background:#17a2b8;width:100%;}
+.restore-btn{background:#f8f9fa;color:#333;width:auto;padding:6px 10px;margin-left:5px;border-radius:6px;}
+.restore-select{margin-left:10px;padding:4px 6px;border-radius:6px;background:#e0e4e8;color:#333;border:none;}
+#owcContainer{flex:0 0 300px;display:flex;flex-direction:column;max-height:80vh;overflow-y:auto;}
+#owcContainer h2{margin-bottom:10px;color:#222;}
+.owc-item{background:rgba(200,200,200,0.2);padding:12px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+#doneNumbersContainer{margin-top:30px;}
+#doneNumbersContainer h2{margin-bottom:10px;color:#222;}
+#doneNumbersList{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-height:calc(10*50px);overflow-y:auto;}
+.done-number{background:#d0d4d8;padding:10px;border-radius:6px;text-align:center;}
+#settingsButton{padding:6px 10px;font-size:14px;border-radius:6px;background:#4facfe;color:white;font-weight:bold;border:none;cursor:pointer;}
+#modalOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:center;z-index:999;}
+#modalBox{background:white;padding:30px;border-radius:20px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.2);}
+#modalBox input{padding:8px;font-size:16px;border-radius:6px;width:60%;margin-bottom:10px;}
+#modalBox button{width:80%;margin:10px auto;display:block;cursor:pointer;font-weight:bold;border-radius:8px;padding:10px 15px;font-size:16px;transition:0.2s;}
+#modalBox button.reset-btn{background:#dc3545;color:white;}
+#modalBox button.close-btn{background:#28a745;color:white;}
+#modalBox button.save-prefix-btn{background:#007bff;color:white;}
+#modalBox button:hover{opacity:0.9;}
+</style>
+</head>
+<body>
+
+<div id="headerBar">
+  <h1>Queue System</h1>
+  <button id="settingsButton" onclick="showSettings()">Settings ⚙️</button>
+</div>
+
+<div id="tablesContainer">
+  <div id="tables"></div>
+  <div id="owcContainer">
+    <h2>OWC LIST</h2>
+    <div id="owcList"></div>
+  </div>
+</div>
+
+<div id="doneNumbersContainer">
+  <h2>Done Numbers (Table 1)</h2>
+  <div id="doneNumbersList"></div>
+</div>
+
+<div id="modalOverlay">
+  <div id="modalBox">
+    <h2>Settings</h2>
+    <div>
+      <label for="prefixInput" style="font-weight:bold;">Custom Prefixes (comma separated):</label>
+      <input type="text" id="prefixInput" placeholder="e.g. PR,PF,PP,PI">
+      <button class="save-prefix-btn" onclick="savePrefix()">Save Prefixes</button>
+    </div>
+    <button class="reset-btn" onclick="resetQueues()">Reset Queues & OWC</button>
+    <button class="close-btn" onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDlGQraZ7m_cdzL2bCxWOb1A165gTwVRKQ",
+  authDomain: "r2tmc-opd-pedia-qs.firebaseapp.com",
+  projectId: "r2tmc-opd-pedia-qs",
+  storageBucket: "r2tmc-opd-pedia-qs.firebasestorage.app",
+  messagingSenderId: "467931438036",
+  appId: "1:467931438036:web:7a15d05ff4a159116e9441",
+  measurementId: "G-KKYGFRSTWB",
+  databaseURL: "https://r2tmc-opd-pedia-qs-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const TOTAL_TABLES = 5;
+let prefixes = [], seriesByPrefix = {}, table1DoneNumbers = [], usedNumbers = new Set(), tableState = {};
+for(let i=1;i<=TOTAL_TABLES;i++) tableState[i]=true;
+
+// ---------- RENDER TABLES ----------
+function renderTables(){
+  let html='';
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    html+=`<div class="table-box">
+      <div class="title">Table ${i}</div>
+      <select id="prefixSelect${i}" class="prefix-dropdown"></select>
+      <div id="num${i}" class="queue-number">0</div>
+      <button class="done-btn" onclick="doneQueue(${i})">Done</button>
+      <button class="next-btn" onclick="nextQueue(${i})" disabled>Next</button>
+      <button class="owc-btn" onclick="owcQueue(${i})">OWC</button>
+      <button class="recall-btn" onclick="recallQueue(${i})">Recall</button>
+    </div>`;
+  }
+  document.getElementById("tables").innerHTML = html;
+}
+renderTables();
+
+// ---------- PREFIXES ----------
+onValue(ref(db,"settings/prefixes"), snap=>{
+  prefixes = snap.exists()?snap.val():[];
+  document.getElementById("prefixInput").value = prefixes.join(",");
+  updatePrefixDropdowns();
+});
+onValue(ref(db,"prefixSeries"), snap => { seriesByPrefix = snap.exists()?snap.val():{}; });
+
+// ---------- HELPERS ----------
+function format(prefix,num){ return `${prefix}-${String(num).padStart(3,'0')}`; }
+function getNextAvailableNumber(prefix){ return table1DoneNumbers.find(n=>n.startsWith(prefix) && !usedNumbers.has(n))||null; }
+function saveTableNumber(i,value){ set(ref(db, "tableNumbers/table"+i), value); }
+
+// ---------- UPDATE DROPDOWNS ----------
+function updatePrefixDropdowns(){
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const sel = document.getElementById(`prefixSelect${i}`);
+    if(!sel) continue;
+    sel.innerHTML='';
+    prefixes.forEach(p=>{
+      const opt = document.createElement("option");
+      opt.value = p; opt.textContent = p; sel.appendChild(opt);
+    });
+  }
+  updateNextButtons();
+}
+
+// ---------- DONE BUTTON ----------
+window.doneQueue = function(i){
+  const el = document.getElementById(`num${i}`);
+  tableState[i]=true;
+  if(i===1 && el.textContent !== "0" && el.textContent !== "-"){
+    table1DoneNumbers.push(el.textContent);
+    renderDoneList();
+  }
+  el.textContent = "-";
+  el.classList.add("done-text");
+  saveTableNumber(i,"-");
+  updateNextButtons();
+};
+
+// ---------- NEXT ----------
+window.nextQueue = function(i){
+  if(!tableState[i]){ alert("Please click DONE first!"); return; }
+  const prefix = document.getElementById(`prefixSelect${i}`).value;
+  if(!prefix) return;
+  const el = document.getElementById(`num${i}`);
+  el.classList.remove("done-text");
+
+  if(i===1){
+    if(!seriesByPrefix[prefix]) seriesByPrefix[prefix]=0;
+    seriesByPrefix[prefix]++;
+    const newNum=format(prefix,seriesByPrefix[prefix]);
+    el.textContent=newNum;
+    tableState[i]=false;
+    saveTableNumber(i,newNum);
+    set(ref(db,"prefixSeries"),seriesByPrefix);
+  }else{
+    const nextNum=getNextAvailableNumber(prefix);
+    if(!nextNum){ alert(`No available number for ${prefix}`); return; }
+    el.textContent=nextNum;
+    usedNumbers.add(nextNum);
+    table1DoneNumbers = table1DoneNumbers.filter(n=>n!==nextNum);
+    tableState[i]=false;
+    saveTableNumber(i,nextNum);
+  }
+  updateNextButtons();
+};
+
+// ---------- OWC ----------
+window.owcQueue = function(i){
+  const el = document.getElementById(`num${i}`);
+  const val = el.textContent;
+  if(val==="0"||val==="-"||val==="DONE") return;
+
+  const prefix = val.split("-")[0];
+  push(ref(db,"owc"),{table:i,number:val,time:Date.now()});
+
+  if(i===1){
+    if(!seriesByPrefix[prefix]) seriesByPrefix[prefix]=0;
+    seriesByPrefix[prefix]++;
+    el.textContent=format(prefix,seriesByPrefix[prefix]);
+    saveTableNumber(i,el.textContent);
+    set(ref(db,"prefixSeries"),seriesByPrefix);
+  }else{
+    usedNumbers.add(val);
+    const nextNum = getNextAvailableNumber(prefix);
+    if(nextNum) el.textContent=nextNum;
+    else el.textContent="0";
+    saveTableNumber(i,el.textContent);
+  }
+  tableState[i]=false;
+  updateNextButtons();
+};
+
+// ---------- RECALL ----------
+window.recallQueue = function(i){
+  const el = document.getElementById(`num${i}`);
+  const val = el.textContent;
+  if(!val || val === "0" || val === "-") return;
+
+  const box = el.parentElement;
+  box.classList.add('pulse');
+  setTimeout(()=>{ box.classList.remove('pulse'); }, 1000);
+
+  const db = getDatabase();
+  set(ref(db, `recall/table${i}`), {number: val, time: Date.now()});
+};
+
+// ---------- DONE LIST ----------
+function renderDoneList(){
+  const box = document.getElementById("doneNumbersList");
+  box.innerHTML='';
+  const usedInTables = new Set();
+  for(let i=2;i<=TOTAL_TABLES;i++){
+    const val = document.getElementById(`num${i}`).textContent;
+    if(val && val!=="0" && val!=="-") usedInTables.add(val);
+  }
+
+  table1DoneNumbers.forEach(n=>{
+    if(!usedInTables.has(n)){
+      const div = document.createElement("div");
+      div.className="done-number";
+      div.textContent=n;
+      box.appendChild(div);
+    }
+  });
+}
+
+// ---------- LIVE OWC ----------
+const owcList = document.getElementById("owcList");
+onValue(ref(db, "owc"), snap => {
+  owcList.innerHTML='';
+  if(!snap.exists()) return;
+
+  Object.entries(snap.val()).forEach(([key,e])=>{
+    const div=document.createElement("div");
+    div.className="owc-item";
+
+    const numberSpan = document.createElement("span");
+    numberSpan.textContent=`${e.number} (Table ${e.table})`;
+    numberSpan.style.fontSize="18px";
+    numberSpan.style.fontWeight="700";
+    numberSpan.style.color="#007bff";
+    div.appendChild(numberSpan);
+
+    const select=document.createElement("select");
+    select.className="restore-select";
+    for(let t=1;t<=TOTAL_TABLES;t++){
+      const opt=document.createElement("option");
+      opt.value=t;
+      opt.textContent=`Table ${t}`;
+      const tableVal = document.getElementById(`num${t}`).textContent;
+      if(tableVal!=="-" && tableVal!=="0") opt.disabled=true;
+      select.appendChild(opt);
+    }
+    select.value=e.table;
+
+    const btn=document.createElement("button");
+    btn.textContent="Restore";
+    btn.className="restore-btn";
+    btn.onclick=()=>{
+      const t=parseInt(select.value);
+      const targetEl = document.getElementById(`num${t}`);
+      const targetVal = targetEl.textContent;
+      if(targetVal!=="-" && targetVal!=="0"){ alert("Target table is not empty!"); return; }
+      targetEl.textContent=e.number;
+      targetEl.classList.remove("done-text");
+      tableState[t]=false;
+      saveTableNumber(t,e.number);
+      remove(ref(db,`owc/${key}`));
+      updateNextButtons();
+    };
+
+    div.appendChild(select);
+    div.appendChild(btn);
+    owcList.appendChild(div);
+  });
+});
+
+// ---------- ENABLE/DISABLE NEXT BASED ON DONE ----------
+function updateNextButtons(){
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const container = document.getElementById(`num${i}`).parentNode;
+    const nextBtn = container.querySelector(".next-btn");
+    const sel = document.getElementById(`prefixSelect${i}`);
+    const prefix = sel.value;
+
+    if(!prefix || !tableState[i]) nextBtn.disabled=true;
+    else if(i>1){
+      const avail = getNextAvailableNumber(prefix);
+      nextBtn.disabled = !avail;
+    }else nextBtn.disabled=false;
+
+    if(i>1){
+      Array.from(sel.options).forEach(opt=>{
+        const avail = getNextAvailableNumber(opt.value);
+        opt.disabled = !avail;
+      });
+    }
+  }
+  renderDoneList();
+}
+
+// ---------- SETTINGS ----------
+window.showSettings=()=>{ document.getElementById('modalOverlay').style.display='flex'; };
+window.closeSettings=()=>{ document.getElementById('modalOverlay').style.display='none'; };
+window.savePrefix=()=>{
+  const val=document.getElementById("prefixInput").value.split(",").map(s=>s.trim()).filter(Boolean);
+  set(ref(db,"settings/prefixes"),val); prefixes=val; updatePrefixDropdowns();
+};
+window.resetQueues=()=>{
+  if(!confirm("Reset all queues and OWC?")) return;
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    document.getElementById(`num${i}`).textContent='0';
+    tableState[i]=true;
+    saveTableNumber(i,'0');
+  }
+  table1DoneNumbers=[]; usedNumbers.clear(); seriesByPrefix={};
+  remove(ref(db,"owc")); set(ref(db,"prefixSeries"),{});
+  renderDoneList(); updateNextButtons();
+};
+
+// ---------- LOAD CURRENT TABLE NUMBERS ON START ----------
+for(let i=1;i<=TOTAL_TABLES;i++){
+  onValue(ref(db,"tableNumbers/table"+i), snap=>{
+    if(snap.exists()){
+      const val = snap.val();
+      const el = document.getElementById(`num${i}`);
+      el.textContent = val;
+      if(val==="-" || val==="0") tableState[i]=true;
+      else tableState[i]=false;
+      if(val!=="-" && val!=="0") el.classList.remove("done-text");
+      updateNextButtons();
+    }
+  });
+}
+</script>
+</body>
+</html>
