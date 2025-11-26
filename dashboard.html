@@ -3,45 +3,272 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Queue Dashboard</title>
+<title>Pediatric Clinic Queue Dashboard</title>
 <style>
-html,body{margin:0;padding:0;height:100%;width:100%;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(135deg,#e6e8eb,#cfd3d6);}
-#mainContainer{display:flex;height:100vh;width:100%;gap:10px;padding:20px;box-sizing:border-box;}
-#tables-container{display:flex;flex-direction:column;flex:1;gap:10px;height:100%;}
-.area-header{font-size:2em;font-weight:bold;background:rgba(245,245,245,0.6);backdrop-filter:blur(12px);border-radius:25px;padding:15px;text-align:center;box-shadow:0 8px 25px rgba(0,0,0,0.08);color:#333;}
-.table-row{display:grid;gap:10px;flex:1;}
-#vital-sign-row{grid-template-columns:1fr;flex:1;}
-#consultation-row{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);flex:2;}
-.table-box{background:rgba(245,245,245,0.5);backdrop-filter:blur(12px);border-radius:25px;text-align:center;display:flex;flex-direction:column;justify-content:center;transition:transform 0.2s,box-shadow 0.2s;width:100%;height:100%;}
-.table-box.highlight{animation:highlightPulse 1s ease-in-out;}
-@keyframes highlightPulse{0%{box-shadow:0 0 25px rgba(0,123,255,0.8);transform:scale(1);}50%{box-shadow:0 0 50px rgba(0,123,255,0.9);transform:scale(1.05);}100%{box-shadow:0 0 25px rgba(0,123,255,0.8);transform:scale(1);}}
-.title{font-size:2em;margin-bottom:10px;}
-.queue-number{font-weight:900;border-radius:20px;color:#fff;display:flex;justify-content:center;align-items:center;flex:1;word-break:break-word;transition:background 0.3s,color 0.3s,font-size 0.2s;}
-#owcContainer{width:350px;max-width:25%;height:100%;background:rgba(245,245,245,0.5);backdrop-filter:blur(12px);border-radius:25px;padding:30px;box-shadow:0 8px 25px rgba(0,0,0,0.08);overflow-y:auto;}
-#owcContainer h2{font-size:2em;margin-bottom:20px;color:#d9534f;text-align:center;}
-#owcList{display:grid;grid-template-columns:1fr;gap:10px;}
-.owc-item{font-size:1.6em;padding:12px;border-radius:15px;background:rgba(217,83,79,0.7);text-align:center;font-weight:bold;color:#fff;animation:pulse 1.5s infinite;}
-@keyframes pulse{0%{box-shadow:0 0 10px rgba(217,83,79,0.7);}50%{box-shadow:0 0 25px rgba(217,83,79,0.7);}100%{box-shadow:0 0 10px rgba(217,83,79,0.7);} }
-@media screen and (max-width:1200px){#mainContainer{flex-direction:column;align-items:center;}#owcContainer{width:90%;margin-top:20px;}}
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: Segoe UI, Tahoma, sans-serif;
+    background: linear-gradient(135deg, #e6e8eb, #cfd3d6);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top Header */
+#topHeader {
+    background-color: #4CAF50;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5em;
+    font-weight: bold;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    flex: 0 0 80px;
+}
+/* Vital Sign Area */
+#leftPanel .area-header {
+    background-color: #007bff; /* Blue header */
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Consultation Area */
+#consultHeader {
+    background-color: #28a745; /* Green header */
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Table Boxes already colored:
+   Table1 -> Blue
+   Tables2-5 -> Green
+   OWC -> Red
+*/
+
+/* Main Container */
+#mainContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    overflow-y: hidden;
+}
+
+/* Top Grids Container */
+#gridsContainer {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Panels */
+#leftPanel { flex: 1.5; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+#centerPanel { 
+    flex: 2; 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    grid-template-rows: auto 1fr 1fr; 
+    gap: 10px;
+}
+
+/* Headers */
+.area-header {
+    font-size: 2em;
+    font-weight: bold;
+    background: rgba(245,245,245,0.6);
+    backdrop-filter: blur(12px);
+    border-radius: 25px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    color: #333;
+}
+
+/* Table Boxes */
+.table-box {
+    border-radius: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.table-box.highlight {
+    animation: highlightPulse 1s ease-in-out;
+}
+
+@keyframes highlightPulse {
+    0% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform: scale(1); }
+    50% { box-shadow: 0 0 50px rgba(0,123,255,0.9); transform: scale(1.02); }
+    100% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform: scale(1); }
+}
+
+.title {
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+/* Table 1 - Vital Sign */
+#table1Box { background: #007bff; color: #fff; }
+#num1List {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: minmax(80px, auto);
+    gap: 10px;
+    width: 100%;
+    overflow-y: auto;
+}
+#num1List .queue-number {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 900;
+    border-radius: 20px;
+    color: #fff;
+    padding: 10px 0;
+    font-size: 4em;
+    word-break: break-word;
+    text-align: center;
+}
+
+/* Consultation Tables 2-5 */
+#centerPanel .table-box {
+    background: #28a745;
+    color: #fff;
+}
+.queue-number-consult {
+    font-weight: 900;
+    border-radius: 20px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    font-size: 10em;
+    transition: font-size 0.2s;
+    overflow: hidden;
+}
+
+/* OWC / OUT WHEN CALLED Panel */
+#owcContainer {
+    background: rgba(245,245,245,0.5);
+    backdrop-filter: blur(12px);
+    border-radius: 25px;
+    padding: 20px;
+    flex: 0 0 250px;
+    overflow-y: auto;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    margin-top: 10px;
+}
+#owcContainer h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #d9534f;
+    text-align: center;
+}
+#owcList {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.owc-item {
+    font-size: 1.8em;
+    padding: 12px;
+    border-radius: 15px;
+    background: rgba(217,83,79,0.7);
+    text-align: center;
+    font-weight: bold;
+    color: #fff;
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 10px rgba(217,83,79,0.7); }
+    50% { box-shadow: 0 0 25px rgba(217,83,79,0.7); }
+    100% { box-shadow: 0 0 10px rgba(217,83,79,0.7); }
+}
+
+/* Responsive */
+@media screen and (max-width: 1200px){
+    #gridsContainer { flex-direction: column; }
+    #centerPanel { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
+    #owcContainer { flex: 0 0 200px; }
+    #owcList { grid-template-columns: repeat(2, 1fr); }
+}
+@media screen and (max-width: 700px){
+    #owcList { grid-template-columns: 1fr; }
+}
+
+/* START BUTTON OVERLAY */
+#startOverlay {
+    position: fixed;
+    top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.4);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+}
+#startOverlay button {
+    padding: 20px 40px;
+    font-size: 2em;
+    border: none;
+    border-radius: 15px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+}
 </style>
 </head>
 <body>
-<div id="mainContainer">
-  <div id="tables-container">
-    <div class="area-header">VITAL SIGN AREA</div>
-    <div class="table-row" id="vital-sign-row"></div>
-    <div class="area-header">CONSULTATION AREA</div>
-    <div class="table-row" id="consultation-row"></div>
+
+<div id="topHeader">PEDIATRIC CLINIC</div>
+
+<div id="startOverlay">
+  <button id="startBtn">Start Dashboard</button>
+</div>
+
+<div id="mainContainer" style="display:none;">
+  <div id="gridsContainer">
+    <!-- Left Panel: Vital Sign Area -->
+    <div id="leftPanel">
+      <div class="area-header">VITAL SIGN AREA</div>
+      <div class="table-box" id="table1Box">
+        <div class="title">Table 1</div>
+        <div id="num1List"></div>
+      </div>
+    </div>
+
+    <!-- Center Panel: Consultation Area -->
+    <div id="centerPanel">
+      <div class="area-header" id="consultHeader" style="grid-column:1/3;text-align:center;">CONSULTATION AREA</div>
+      <div class="table-box"><div class="title">Table 2</div><div class="queue-number-consult" id="num2">0</div></div>
+      <div class="table-box"><div class="title">Table 3</div><div class="queue-number-consult" id="num3">0</div></div>
+      <div class="table-box"><div class="title">Table 4</div><div class="queue-number-consult" id="num4">0</div></div>
+      <div class="table-box"><div class="title">Table 5</div><div class="queue-number-consult" id="num5">0</div></div>
+    </div>
   </div>
+
+  <!-- OWC / OUT WHEN CALLED -->
   <div id="owcContainer">
-    <h2>OWC LIST</h2>
+    <h2>OUT WHEN CALLED</h2>
     <div id="owcList"></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlGQraZ7m_cdzL2bCxWOb1A165gTwVRKQ",
@@ -56,97 +283,99 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const TOTAL_TABLES = 5;
-const prefixColors = {"PR":"rgba(0,123,255,0.7)","PF":"rgba(40,167,69,0.7)","PP":"rgba(255,193,7,0.7)","PI":"rgba(23,162,184,0.7)"};
-
-// Keep track of which numbers have already been announced
 const announcedNumbers = {};
 
-function renderTables(){
-  const vitalRow = document.getElementById("vital-sign-row");
-  const consultRow = document.getElementById("consultation-row");
+const startBtn = document.getElementById('startBtn');
+const startOverlay = document.getElementById('startOverlay');
+const mainContainer = document.getElementById('mainContainer');
 
-  // Table 1
-  const div1 = document.createElement('div'); div1.className='table-box';
-  const title1 = document.createElement('div'); title1.className='title'; title1.textContent='Table 1'; div1.appendChild(title1);
-  const num1 = document.createElement('div'); num1.id='num1'; num1.className='queue-number'; num1.textContent='0'; div1.appendChild(num1);
-  vitalRow.appendChild(div1);
+startBtn.addEventListener('click', ()=>{
+  startOverlay.style.display = 'none';
+  mainContainer.style.display = 'flex';
+  window.speechSynthesis.speak(new SpeechSynthesisUtterance("Dashboard started. Loading queues now."));
+  loadVitalSignList();
+  loadTables();
+  loadOWCList();
+});
 
-  // Tables 2 to TOTAL_TABLES
-  for(let i=2;i<=TOTAL_TABLES;i++){
-    const div = document.createElement('div'); div.className='table-box';
-    const title = document.createElement('div'); title.className='title'; title.textContent=`Table ${i}`; div.appendChild(title);
-    const numDiv = document.createElement('div'); numDiv.id=`num${i}`; numDiv.className='queue-number'; numDiv.textContent='0'; div.appendChild(numDiv);
-    consultRow.appendChild(div);
-  }
+// Load Table 1 - Vital Sign
+function loadVitalSignList(){
+  const num1List = document.getElementById('num1List');
+  onValue(ref(db, "vitalSignList"), snap=>{
+    num1List.innerHTML = '';
+    const data = snap.val() || {};
+    const entries = Object.entries(data).sort((a,b)=>a[1].time - b[1].time).slice(0,10);
+    entries.forEach(([key,e])=>{
+      const div = document.createElement("div");
+      div.className = "queue-number";
+      div.textContent = e.number;
+      div.style.background = "#007bff"; // Blue
+      div.style.color = "#fff";
+      num1List.appendChild(div);
+      if(!announcedNumbers[e.number]){
+        speakNumber(e.number,1,"Now serving");
+        highlightTable(document.getElementById('table1Box'));
+        announcedNumbers[e.number] = true;
+      }
+    });
+  });
+}
 
-  for(let i=1;i<=TOTAL_TABLES;i++){
-    const el = document.getElementById(`num${i}`);
-    const box = el.parentElement;
-    announcedNumbers[i] = el.textContent; // Initialize with current value
-
-    // Listen for table number changes
+// Tables 2-5
+function loadTables(){
+  [2,3,4,5].forEach(i=>{
+    const numEl = document.getElementById(`num${i}`);
+    const boxEl = numEl.parentElement;
+    announcedNumbers[i] = numEl.textContent;
     onValue(ref(db, `tableNumbers/table${i}`), snap=>{
       const val = snap.exists()?snap.val():"0";
-      el.textContent = val;
-      const prefix = val.split("-")[0];
-      if(prefixColors[prefix]){ el.style.background=prefixColors[prefix]; el.style.color="#fff"; }
-      else{ el.style.background="rgba(0,0,0,0.2)"; el.style.color="#fff"; }
-
+      numEl.textContent = val;
+      numEl.style.background = "#28a745"; // Green
+      numEl.style.color = "#fff";
       const len = val.length;
-      el.style.fontSize=(i===1)?(len<=3?'8em':(len<=5?'6em':'5em')):(len<=3?'6em':(len<=5?'5em':'4em'));
-
-      // Announce only if value changed and not "-" or "0" and hasn't been announced
-      if(val !== "-" && val !== "0" && val !== announcedNumbers[i]){
-        speakNumber(val, i, "Now serving");
-        highlightTable(box);
-        announcedNumbers[i] = val;
+      numEl.style.fontSize = len <= 3 ? '10em' : len <=5 ? '8em' : '6em';
+      if(val!=="0" && val!=="-" && val!==announcedNumbers[i]){
+        speakNumber(val,i,"Now serving");
+        highlightTable(boxEl);
+        announcedNumbers[i]=val;
       }
     });
-
-    // Listen for recall flags
-    onValue(ref(db, `recall/table${i}`), snap=>{
-      if(snap.exists()){
-        const recallData = snap.val();
-        const numberText = recallData.number;
-        if(numberText){
-          speakNumber(numberText, i, "Now recalling");
-          highlightTable(box);
-        }
-        // Remove recall flag after speaking
-        remove(ref(db, `recall/table${i}`));
-      }
-    });
-  }
+  });
 }
-renderTables();
+
+// OWC / OUT WHEN CALLED
+function loadOWCList(){
+  const owcList = document.getElementById("owcList");
+  onValue(ref(db,"owc"), snap=>{
+    owcList.innerHTML='';
+    if(!snap.exists()) return;
+    Object.values(snap.val()).sort((a,b)=>a.time-b.time).forEach(e=>{
+      const div=document.createElement("div");
+      div.className="owc-item";
+      div.textContent=`${e.number} (Table ${e.table})`;
+      owcList.appendChild(div);
+    });
+  });
+}
 
 function speakNumber(numberText, tableNumber, action="Now serving"){
   if(!numberText || numberText==="0" || numberText==="-") return;
   const [prefix,numStr] = numberText.split("-");
   const number = parseInt(numStr,10);
-  const area = tableNumber===1?"Vital Sign Area":"Consultation Area";
-  const utterance = new SpeechSynthesisUtterance(`${action}, ${prefix} number ${number}. Please proceed to ${area}, table ${tableNumber}.`);
-  utterance.rate=1;
-  utterance.pitch=1;
+  const area = (tableNumber===1?"Vital Sign Area":"Consultation Area");
+  const utterance = new SpeechSynthesisUtterance(
+    `${action} ${prefix} number ${number}, please proceed to Pediatric Clinic Room 209, ${area}, Table ${tableNumber}.`
+  );
+  utterance.rate = 1;
+  utterance.pitch = 1;
   window.speechSynthesis.speak(utterance);
 }
 
-function highlightTable(box){
-  box.classList.add('highlight');
-  setTimeout(()=>{ box.classList.remove('highlight'); },1000);
-}
 
-// Live OWC
-const owcList = document.getElementById("owcList");
-onValue(ref(db, "owc"), snap=>{
-  owcList.innerHTML='';
-  if(!snap.exists()) return;
-  Object.values(snap.val()).sort((a,b)=>a.time-b.time).forEach(e=>{
-    const div=document.createElement("div"); div.className="owc-item"; div.textContent=`${e.number} (Table ${e.table})`;
-    owcList.appendChild(div);
-  });
-});
+function highlightTable(box){ 
+  box.classList.add('highlight'); 
+  setTimeout(()=>box.classList.remove('highlight'),1000); 
+}
 </script>
 </body>
 </html>
