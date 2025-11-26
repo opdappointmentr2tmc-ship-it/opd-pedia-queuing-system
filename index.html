@@ -20,7 +20,7 @@ body { background:#f0f2f5; padding:20px; color:#333; min-height:100vh; }
 .table-box.pulse { animation:pulseRecall 1s ease-in-out; }
 @keyframes pulseRecall {0% { box-shadow:0 0 20px rgba(23,162,184,0.8); transform:scale(1); }50%{ box-shadow:0 0 40px rgba(23,162,184,0.9); transform:scale(1.05);}100%{ box-shadow:0 0 20px rgba(23,162,184,0.8); transform:scale(1);} }
 .vital-full { animation:vitalFullPulse 0.8s ease-in-out; color:red !important; font-weight:900;}
-@keyframes vitalFullPulse{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
+@keyframes vitalFullPulse{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);} }
 
 .table-box.highlight { animation: highlightPulse 1s ease-in-out; }
 @keyframes highlightPulse {
@@ -182,109 +182,103 @@ function updatePrefixDropdowns(){
   }
 }
 
-/* -------------------- Next Queue -------------------- */
-function format(prefix,num){ return `${prefix}-${String(num).padStart(3,"0")}`; }
-function saveTableNumber(i,num){ set(ref(db,"tableNumbers/table"+i),num); }
-function getNextAvailableNumber(prefix){ return table1DoneNumbers.find(n=>n.startsWith(prefix)&&!usedNumbers.has(n))||null; }
+/* -------------------- Helper: Sort Table1 Done Numbers -------------------- */
+function sortTable1DoneNumbers() {
+  table1DoneNumbers.sort((a,b)=>{
+    const [pA,nA]=a.split("-"); const [pB,nB]=b.split("-");
+    if(pA!==pB) return prefixes.indexOf(pA)-prefixes.indexOf(pB);
+    return parseInt(nA,10)-parseInt(nB,10);
+  });
+}
 
-window.nextQueue=function(i){
-  const prefix=document.getElementById("prefixSelect"+i).value; if(!prefix) return;
+/* -------------------- Next Queue -------------------- */
+function getNextAvailableNumber(prefix){
+  return table1DoneNumbers.find(n => n.startsWith(prefix) && !usedNumbers.has(n)) || null;
+}
+
+window.nextQueue = function(i){
+  const prefix = document.getElementById("prefixSelect"+i).value; 
+  if(!prefix) return;
 
   if(i===1){
-    const list=document.getElementById("vitalSignList");
-    if(list.children.length>=10){ 
+    const list = document.getElementById("vitalSignList");
+    if(list.children.length >= 10){ 
       alert("Vital Sign List can have max 10 numbers!"); 
-      const el=document.getElementById("num1"); 
+      const el = document.getElementById("num1"); 
       el.classList.add("vital-full"); 
       setTimeout(()=>el.classList.remove("vital-full"),800); 
       return;
     }
-    if(!seriesByPrefix[prefix]) seriesByPrefix[prefix]=0; 
+    if(!seriesByPrefix[prefix]) seriesByPrefix[prefix] = 0; 
     seriesByPrefix[prefix]++;
-    const newNum=format(prefix,seriesByPrefix[prefix]);
-    document.getElementById("num1").textContent=newNum;
+    const newNum = `${prefix}-${String(seriesByPrefix[prefix]).padStart(3,"0")}`;
+    document.getElementById("num1").textContent = newNum;
     addToVitalSignList(newNum);
-    saveTableNumber(1,newNum);
+    set(ref(db,"tableNumbers/table1"),newNum);
     set(ref(db,"prefixSeries"),seriesByPrefix);
     highlightTable(1);
     return;
   }
 
-  const nextNum=getNextAvailableNumber(prefix);
-  if(!nextNum) return alert("No available number for "+prefix);
-  const el=document.getElementById("num"+i); el.textContent=nextNum;
+  const nextNum = getNextAvailableNumber(prefix);
+  if(!nextNum) return alert("No available number for " + prefix);
+
+  const el = document.getElementById("num"+i); 
+  el.textContent = nextNum;
+
   usedNumbers.add(nextNum);
-  table1DoneNumbers=table1DoneNumbers.filter(n=>n!==nextNum);
-  saveTableNumber(i,nextNum);
+  table1DoneNumbers = table1DoneNumbers.filter(n => n !== nextNum);
+  sortTable1DoneNumbers();
+  set(ref(db,"tableNumbers/table"+i),nextNum);
   renderDoneList();
-  document.getElementById("nextBtn"+i).disabled=true;
+  document.getElementById("nextBtn"+i).disabled = true;
   highlightTable(i);
 };
 
-/* -------------------- Vital Sign List Functions -------------------- */
+/* -------------------- Vital Sign List -------------------- */
 function renderVitalSignList(num) {
   const list = document.getElementById("vitalSignList"); 
-  if(list.querySelector(`#vital-${num}`)) return; // avoid duplicates
+  if(list.querySelector(`#vital-${num}`)) return;
 
   const div = document.createElement("div"); 
   div.className = "done-number"; 
   div.id = `vital-${num}`;
-  const span = document.createElement("span"); 
-  span.textContent = num;
+  const span = document.createElement("span"); span.textContent = num;
 
   const checkBtn = document.createElement("button"); 
-  checkBtn.textContent = "✅";
-  checkBtn.style.width="50px"; 
-  checkBtn.style.fontSize="20px"; 
-  checkBtn.style.padding="0"; 
-  checkBtn.style.background="#28a745"; 
-  checkBtn.style.color="white"; 
-  checkBtn.style.borderRadius="6px"; 
-  checkBtn.style.border="none";
-
+  checkBtn.textContent = "✅"; checkBtn.style.width="50px"; checkBtn.style.fontSize="20px"; checkBtn.style.padding="0"; checkBtn.style.background="#28a745"; checkBtn.style.color="white"; checkBtn.style.borderRadius="6px"; checkBtn.style.border="none";
   checkBtn.onclick = () => {
     const current = document.getElementById("num1").textContent; 
     if(current === num){
       document.getElementById("num1").textContent="-"; 
-      saveTableNumber(1,"-"); 
+      set(ref(db,"tableNumbers/table1"),"-"); 
       highlightTable(1);
     }
     table1DoneNumbers.push(num); 
+    sortTable1DoneNumbers();
     renderDoneList(); 
     div.remove(); 
-    highlightTable(1);
     remove(ref(db, "vitalSignList/" + num));
   };
 
   const xBtn = document.createElement("button"); 
-  xBtn.textContent = "❌";
-  xBtn.style.width="50px"; 
-  xBtn.style.fontSize="20px"; 
-  xBtn.style.padding="0"; 
-  xBtn.style.background="#dc3545"; 
-  xBtn.style.color="white"; 
-  xBtn.style.borderRadius="6px"; 
-  xBtn.style.border="none";
-
+  xBtn.textContent = "❌"; xBtn.style.width="50px"; xBtn.style.fontSize="20px"; xBtn.style.padding="0"; xBtn.style.background="#dc3545"; xBtn.style.color="white"; xBtn.style.borderRadius="6px"; xBtn.style.border="none";
   xBtn.onclick = () => {
     push(ref(db,"owc"),{table:1,number:num,time:Date.now()}); 
     div.remove(); 
     const current = document.getElementById("num1").textContent; 
     if(current === num){
       document.getElementById("num1").textContent="0"; 
-      saveTableNumber(1,"0");
+      set(ref(db,"tableNumbers/table1"),"0");
     }
     remove(ref(db, "vitalSignList/" + num));
   };
 
   const buttonGroup = document.createElement("div"); 
-  buttonGroup.style.display="flex"; 
-  buttonGroup.style.gap="5px"; 
-  buttonGroup.appendChild(checkBtn); 
-  buttonGroup.appendChild(xBtn);
+  buttonGroup.style.display="flex"; buttonGroup.style.gap="5px"; 
+  buttonGroup.appendChild(checkBtn); buttonGroup.appendChild(xBtn);
 
-  div.appendChild(span); 
-  div.appendChild(buttonGroup); 
+  div.appendChild(span); div.appendChild(buttonGroup); 
   list.appendChild(div);
 }
 
@@ -320,20 +314,31 @@ function renderDoneList(){
 }
 
 /* -------------------- Done/OWC Tables 2-5 -------------------- */
-window.doneQueue=function(i){ 
-  document.getElementById("num"+i).textContent="-"; 
-  saveTableNumber(i,"-"); 
-  renderDoneList(); 
-  document.getElementById("nextBtn"+i).disabled=false; 
-  highlightTable(i); 
+window.doneQueue = function(i){
+  const numEl = document.getElementById("num"+i);
+  const num = numEl.textContent;
+
+  if(num && num !== "0" && num !== "-"){
+    table1DoneNumbers.push(num);
+    sortTable1DoneNumbers();
+    renderDoneList();
+  }
+
+  numEl.textContent = "-";
+  set(ref(db,"tableNumbers/table"+i),"-");
+  document.getElementById("nextBtn"+i).disabled = false;
+  highlightTable(i);
 };
-window.owcQueue=function(i){ 
+
+window.owcQueue = function(i){
   const el=document.getElementById("num"+i); 
   const num=el.textContent; 
   if(!num||num==="0"||num==="-") return; 
   push(ref(db,"owc"),{table:i,number:num,time:Date.now()}); 
   el.textContent="0"; 
 };
+
+/* -------------------- Recall -------------------- */
 window.recallQueue = function(i) {
   const parent = document.getElementById("tableBox" + i);
   parent.classList.add("pulse");
@@ -343,7 +348,6 @@ window.recallQueue = function(i) {
   if (!currentNum || currentNum === "0" || currentNum === "-") return;
 
   const area = i === 1 ? "Vital Sign Area" : "Consultation Area";
-
   const [prefix, numStr] = currentNum.split("-");
   const num = parseInt(numStr, 10);
 
@@ -355,7 +359,7 @@ window.recallQueue = function(i) {
   window.speechSynthesis.speak(utterance);
 };
 
-/* -------------------- OWC List -------------------- */
+/* -------------------- OWC List with Prefix-First Restore -------------------- */
 onValue(ref(db,"owc"),snap=>{
   const list=document.getElementById("owcList"); list.innerHTML="";
   if(!snap.exists()) return;
@@ -375,30 +379,35 @@ onValue(ref(db,"owc"),snap=>{
     tableSelect.value=v.table;
 
     const restoreBtn=document.createElement("button"); 
-    restoreBtn.textContent="✅"; 
-    restoreBtn.style.width="40px"; 
-    restoreBtn.style.height="35px"; 
-    restoreBtn.style.fontSize="18px"; 
-    restoreBtn.style.background="#28a745"; 
-    restoreBtn.style.color="white"; 
-    restoreBtn.style.border="none"; 
-    restoreBtn.style.borderRadius="6px"; 
-    restoreBtn.style.cursor="pointer";
+    restoreBtn.textContent="✅"; restoreBtn.style.width="40px"; restoreBtn.style.height="35px"; restoreBtn.style.fontSize="18px"; restoreBtn.style.background="#28a745"; restoreBtn.style.color="white"; restoreBtn.style.border="none"; restoreBtn.style.borderRadius="6px"; restoreBtn.style.cursor="pointer";
 
     restoreBtn.onclick=()=>{
       const chosenTable=parseInt(tableSelect.value);
-      const currentValue=document.getElementById("num"+chosenTable).textContent;
-      if(currentValue!=="0"&&currentValue!=="-"){ alert(`Cannot restore to Table ${chosenTable}, it already has a number.`); return;}
-      if(chosenTable===1){ addToVitalSignList(v.number); } 
-      else { 
-        const el=document.getElementById("num"+chosenTable); 
-        el.textContent=v.number; 
-        usedNumbers.add(v.number); 
-        table1DoneNumbers=table1DoneNumbers.filter(n=>n!==v.number); 
-        saveTableNumber(chosenTable,v.number); 
-        renderDoneList(); 
-        document.getElementById("nextBtn"+chosenTable).disabled=true; 
+      const prefix = v.number.split("-")[0];
+
+      if(chosenTable===1){
+        const vitalList=document.getElementById("vitalSignList");
+        if(vitalList.children.length>=10){ 
+          alert("Vital Sign Area can only hold 10 numbers. Cannot restore."); 
+          return; 
+        }
+        addToVitalSignList(v.number);
+      } else {
+        const nextNum = getNextAvailableNumber(prefix);
+        if(!nextNum){
+          alert(`No available number for ${prefix} in Table 2-5.`); 
+          return;
+        }
+        const el = document.getElementById("num"+chosenTable);
+        el.textContent = nextNum;
+        usedNumbers.add(nextNum);
+        table1DoneNumbers = table1DoneNumbers.filter(n => n !== nextNum);
+        sortTable1DoneNumbers();
+        set(ref(db,"tableNumbers/table"+chosenTable),nextNum);
+        renderDoneList();
+        document.getElementById("nextBtn"+chosenTable).disabled = true;
       }
+
       highlightTable(chosenTable);
       remove(ref(db,"owc/"+key));
     };
@@ -422,7 +431,7 @@ window.resetQueues=()=>{
   if(!confirm("Reset all queues & OWC?")) return;
   for(let i=1;i<=TOTAL_TABLES;i++){ 
     document.getElementById("num"+i).textContent="0"; 
-    saveTableNumber(i,"0"); 
+    set(ref(db,"tableNumbers/table"+i),"0"); 
     document.getElementById("nextBtn"+i).disabled=i!==1; 
   }
   document.getElementById("vitalSignList").innerHTML="";
