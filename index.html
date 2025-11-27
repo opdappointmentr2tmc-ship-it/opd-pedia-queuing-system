@@ -51,6 +51,53 @@ button {padding:14px;margin-top:10px;width:100%;border:none;border-radius:10px;f
 </style>
 </head>
 <body>
+<!-- ===== STARTUP USER MENU ===== -->
+<div id="userMenuOverlay">
+  <div id="userMenuBox">
+    <h2>Select Your Table</h2>
+
+   <select id="tableSelectMenu">
+  <option value="">-- Choose Table --</option>
+  <option value="1">Table 1</option>
+  <option value="2">Table 2</option>
+  <option value="3">Table 3</option>
+  <option value="4">Table 4</option>
+  <option value="5">Table 5</option>
+  <option value="all">Nurse Station (Show All Tables)</option>
+</select>
+
+
+    <button onclick="confirmTableSelection()" style="margin-top:15px;background:#007bff;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:700;">
+      Continue
+    </button>
+  </div>
+</div>
+
+<style>
+#userMenuOverlay {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:2000;
+}
+#userMenuBox {
+  background:white;
+  padding:30px;
+  border-radius:18px;
+  width:300px;
+  text-align:center;
+}
+#tableSelectMenu {
+  width:100%;
+  padding:12px;
+  font-size:18px;
+  border-radius:10px;
+}
+</style>
 
 <div id="headerBar">
   <h1>Pediatric Clinic Queueing System</h1>
@@ -65,11 +112,11 @@ button {padding:14px;margin-top:10px;width:100%;border:none;border-radius:10px;f
   </div>
 </div>
 
-<div id="vitalAndDone">
-  <div style="flex:1;">
-    <h2>Vital Sign List (Max 10)</h2>
-    <div id="vitalSignList"></div>
-  </div>
+<div id="vitalSignContainer" style="flex:1;">
+  <h2>Vital Sign List (Max 10)</h2>
+  <div id="vitalSignList"></div>
+</div>
+
   <div style="flex:1;">
     <h2>Done Numbers (Table 1)</h2>
     <div id="doneNumbersList"></div>
@@ -82,7 +129,9 @@ button {padding:14px;margin-top:10px;width:100%;border:none;border-radius:10px;f
     <label>Custom Prefixes (comma separated)</label>
     <input id="prefixInput" type="text" style="width:100%; padding:8px; margin-top:8px;">
     <button onclick="savePrefix()" style="background:var(--primary);">Save Prefixes</button>
+    <button onclick="changeTable()" style="background:#17a2b8;">Change Table</button>
     <button onclick="resetQueues()" style="background:var(--danger);">Reset Queues & OWC</button>
+
     <button onclick="closeSettings()" style="background:var(--success);">Close</button>
   </div>
 </div>
@@ -92,6 +141,58 @@ button {padding:14px;margin-top:10px;width:100%;border:none;border-radius:10px;f
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, push, remove, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+/* ===================== USER TABLE SELECTION ===================== */
+let selectedTable = localStorage.getItem("selectedTable") || null;
+window.changeTable = function () {
+  localStorage.removeItem("selectedTable");
+  document.getElementById("userMenuOverlay").style.display = "flex";
+  closeSettings();
+};
+
+window.confirmTableSelection = function () {
+  const chosen = document.getElementById("tableSelectMenu").value;
+
+  if (!chosen) {
+    toast("Please select a table.");
+    return;
+  }
+
+  selectedTable = (chosen === "all") ? "all" : parseInt(chosen);
+  localStorage.setItem("selectedTable", selectedTable);
+
+  applyTablePermissions();
+  document.getElementById("userMenuOverlay").style.display = "none";
+};
+
+function applyTablePermissions() {
+  const vitalContainer = document.getElementById("vitalSignContainer");
+
+  for (let i = 1; i <= TOTAL_TABLES; i++) {
+    const box = document.getElementById("tableBox" + i);
+
+    if (selectedTable === "all" || i === selectedTable) {
+      box.style.display = "block";
+    } else {
+      box.style.display = "none";
+    }
+  }
+
+  // Show Vital Sign only for Table 1 or Nurse Station
+  if (selectedTable === 1 || selectedTable === "all") {
+    vitalContainer.style.display = "block";
+  } else {
+    vitalContainer.style.display = "none";
+  }
+};
+
+// If user already selected previously, skip menu
+if (selectedTable) {
+  window.addEventListener("load", () => {
+    document.getElementById("userMenuOverlay").style.display = "none";
+    applyTablePermissions();
+  });
+}
+
 
 /* -------------------- Constants -------------------- */
 const firebaseConfig = {
@@ -138,12 +239,6 @@ function createButton(label, bgColor, onClick, size="50px", fontSize="20px") {
   btn.style.cursor = "pointer";
   btn.onclick = onClick;
   return btn;
-}
-
-function highlightTable(i){
-  const box=document.getElementById("tableBox"+i);
-  box.classList.add("highlight");
-  setTimeout(()=>box.classList.remove("highlight"),1000);
 }
 
 function sortTable1DoneNumbers(){
