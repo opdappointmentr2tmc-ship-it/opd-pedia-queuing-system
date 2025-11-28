@@ -178,6 +178,20 @@
   text-overflow: ellipsis; /* truncate with ... if number is too long */
   max-width: 60px;          /* adjust width to fit box */
 }
+/* Smooth sliding for header */
+#headerBar {
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.4s ease;
+  max-height: 200px; /* adjust to fit header height */
+  opacity: 1;
+}
+
+#headerBar.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+}
 
 
 </style>
@@ -199,6 +213,11 @@
       <button class="small-btn" style="margin-top:14px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:800" onclick="confirmTableSelection()">Continue</button>
     </div>
   </div>
+<div style="margin-bottom:12px;">
+  <button id="headerToggleBtn" class="small-btn" onclick="toggleHeader()" style="background:#17a2b8;color:#fff;">
+    Hide Header
+  </button>
+</div>
 
   <div id="headerBar">
     <h1>Pediatric Clinic Queueing System</h1>
@@ -379,6 +398,20 @@
     document.getElementById("tables").innerHTML = html;
   }
   renderTables();
+
+window.toggleHeader = function() {
+  const header = document.getElementById("headerBar");
+  const btn = document.getElementById("headerToggleBtn");
+
+  if(header.classList.contains("collapsed")) {
+    header.classList.remove("collapsed"); // show
+    btn.textContent = "Hide Header";
+  } else {
+    header.classList.add("collapsed");    // hide
+    btn.textContent = "Show Header";
+  }
+};
+
 
   /* -------------------- APPLY TABLE PERMISSIONS -------------------- */
   function applyTablePermissions(){
