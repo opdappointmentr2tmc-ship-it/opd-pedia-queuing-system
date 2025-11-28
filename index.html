@@ -96,6 +96,13 @@ button {padding:12px;margin-top:10px;width:100%;border:none;border-radius:10px;f
   .queue-number {font-size:32px; padding:8px;}
   button {font-size:12px; padding:8px;}
   h1,h2 {font-size:1rem;}
+@media(max-width:700px){
+  #toggleOwcBtn {
+    display:block;
+    width:100%;
+  }
+}
+
 }
 }
 .prefix-color {padding:2px 6px;border-radius:4px;color:white;font-weight:700;}
@@ -145,12 +152,17 @@ button {padding:12px;margin-top:10px;width:100%;border:none;border-radius:10px;f
 </div>
 
 <div id="headerBar">
-  <h1>Pediatric Clinic Queueing System.</h1>
+  <h1>Pediatric Clinic Queueing Systems</h1>
   <button id="settingsButton" onclick="showSettings()">Settings ⚙️</button>
 </div>
 
 <div id="tablesContainer">
   <div id="tables"></div>
+<!-- Mobile-only OWC Toggle -->
+<button id="toggleOwcBtn" onclick="toggleOwcList()" style="display:none; margin-bottom:10px; background:#ffc107; color:#333; font-weight:700; border:none; border-radius:8px; padding:10px;">
+  Show/Hide OWC List
+</button>
+
   <div id="owcContainer">
     <h2>OWC LIST</h2>
     <div id="owcList"></div>
@@ -327,6 +339,14 @@ window.nextQueue=function(i){
   sortTable1DoneNumbers(); set(ref(db,"tableNumbers/table"+i),nextNum);
   renderDoneList(); document.getElementById("nextBtn"+i).disabled=true; highlightTable(i);
 };
+function toggleOwcList(){
+  const container = document.getElementById("owcContainer");
+  if(container.style.display === "none" || container.style.display === ""){
+    container.style.display = "block";
+  } else {
+    container.style.display = "none";
+  }
+}
 
 window.doneQueue=function(i){
   const el=document.getElementById("num"+i), num=el.textContent;
