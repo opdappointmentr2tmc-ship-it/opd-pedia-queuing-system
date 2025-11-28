@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pediatric Clinic Queueing System</title>
+<title>Pediatric Clinic Queueing System.</title>
 <style>
 /* ===== BASE STYLES ===== */
 :root {
@@ -23,6 +23,21 @@ h1,h2 {margin-bottom:10px; font-size:1.5rem;}
 #settingsButton {padding:12px;font-size:16px;border-radius:10px;background:var(--primary);color:white;font-weight:700;border:none;cursor:pointer;width:auto; margin-top:10px;}
 #tablesContainer {display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;}
 #tables {display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;flex:1;}
+/* ===== MOBILE ONLY: Reorder OWC ===== */
+@media (max-width: 700px) {
+  #tablesContainer {
+    flex-direction: column; /* stack vertically on mobile */
+  }
+  #owcContainer {
+    order: 99;     /* move OWC to the bottom */
+    width: 100%;   /* make it full width */
+  }
+  #tables {
+    order: 1;      /* keep tables at the top */
+    width: 100%;
+  }
+}
+
 
 /* ===== TABLE BOX ===== */
 .table-box {background:white;padding:20px;border-radius:18px;box-shadow:0 8px 25px rgba(0,0,0,0.1);text-align:center;transition: all 0.3s ease;}
