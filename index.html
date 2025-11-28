@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pediatric Clinic Queueing System</title>
 <style>
+/* ===== BASE STYLES ===== */
 :root {
   --bg: #f0f2f5;
   --primary: #007bff;
@@ -17,36 +18,70 @@
 
 * {margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Tahoma,sans-serif;}
 body {background: var(--bg); padding:20px; color:#333; min-height:100vh;}
-h1,h2 {margin-bottom:10px;}
-#headerBar {display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
-#settingsButton {padding:14px;font-size:18px;border-radius:10px;background:var(--primary);color:white;font-weight:700;border:none;cursor:pointer;width:150px;text-align:center;}
+h1,h2 {margin-bottom:10px; font-size:1.5rem;}
+#headerBar {display:flex;justify-content:space-between;align-items:center;margin-bottom:20px; flex-wrap: wrap;}
+#settingsButton {padding:12px;font-size:16px;border-radius:10px;background:var(--primary);color:white;font-weight:700;border:none;cursor:pointer;width:auto; margin-top:10px;}
 #tablesContainer {display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;}
 #tables {display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;flex:1;}
-.prefix-dropdown {width:100%;padding:10px;font-size:18px;border-radius:8px;margin-top:10px;}
-.table-box {background:white;padding:25px;border-radius:18px;box-shadow:0 8px 25px rgba(0,0,0,0.1);text-align:center;transition: all 0.3s ease;}
+
+/* ===== TABLE BOX ===== */
+.table-box {background:white;padding:20px;border-radius:18px;box-shadow:0 8px 25px rgba(0,0,0,0.1);text-align:center;transition: all 0.3s ease;}
 .table-box.pulse{animation:pulseRecall 1s ease-in-out;}
 @keyframes pulseRecall{0%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1);}50%{box-shadow:0 0 40px rgba(23,162,184,0.9);transform:scale(1.05);}100%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1);}}
 .table-box.highlight{animation:highlightPulse 1s ease-in-out;}
 @keyframes highlightPulse{0%{box-shadow:0 0 20px rgba(40,167,69,0.8);transform:scale(1);}50%{box-shadow:0 0 40px rgba(40,167,69,0.9);transform:scale(1.03);}100%{box-shadow:0 0 20px rgba(40,167,69,0.8);transform:scale(1);}}
-button {padding:14px;margin-top:10px;width:100%;border:none;border-radius:10px;font-size:18px;color:white;font-weight:700;cursor:pointer;}
+
+button {padding:12px;margin-top:10px;width:100%;border:none;border-radius:10px;font-size:16px;color:white;font-weight:700;cursor:pointer;}
 .next-btn {background:var(--primary);} 
 .done-btn {background:var(--done);} 
 .owc-btn {background:var(--owc);color:#333;} 
 .recall-btn {background:var(--recall);}
-.queue-number {font-size:80px;font-weight:900;background:#e0e4e8;padding:20px;border-radius:15px;margin:20px 0;}
+.queue-number {font-size:60px;font-weight:900;background:#e0e4e8;padding:15px;border-radius:15px;margin:20px 0;word-break: break-word;}
+
+/* ===== VITAL & DONE LIST ===== */
 #vitalAndDone {display:flex;gap:20px;margin-top:30px;flex-wrap:wrap;}
-#vitalSignContainer {flex:1;}
-#vitalSignList,#doneNumbersList {display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-.done-number {background:#d0d4d8;padding:10px;height:60px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:900;}
-.owc-item {background:#ececec;padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:22px;}
-#owcContainer {width:280px;}
+#vitalSignContainer {flex:1; min-width:200px;}
+#vitalSignList,#doneNumbersList {display:grid;grid-template-columns:repeat(5,1fr);gap:10px; max-height:500px; overflow-y:auto;}
+.done-number {background:#d0d4d8;padding:10px;height:60px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:900; word-break: break-word;}
+.owc-item {background:#ececec;padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:18px; word-break: break-word;}
+#owcContainer {width:280px; max-width:100%; overflow-x:hidden;}
 #owcList {max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+
+/* ===== MODALS ===== */
 #modalOverlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:center;}
-#modalBox {background:white;padding:30px;border-radius:20px;width:330px;text-align:center;}
-.toast {position:fixed;top:20px;right:20px;background:#333;color:white;padding:12px 20px;border-radius:8px;opacity:0.9;z-index:1000;}
-@media(max-width:600px){
-  #tablesContainer {flex-direction: column;}
+#modalBox {background:white;padding:20px;border-radius:20px;width:90%;max-width:350px;text-align:center;}
+#userMenuOverlay {position: fixed;top:0; left:0;width:100%; height:100%;background: rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center; z-index:2000;}
+#userMenuBox {background:white;padding:20px;border-radius:18px;width:90%;max-width:320px;text-align:center;}
+#tableSelectMenu {width:100%; padding:10px; font-size:16px; border-radius:8px;}
+
+/* ===== TOAST ===== */
+.toast {position:fixed;top:20px;right:20px;background:#333;color:white;padding:10px 16px;border-radius:8px;opacity:0.9;z-index:1000; font-size:14px;}
+
+/* ===== PREFIX ===== */
+.prefix-dropdown {width:100%;padding:8px;font-size:16px;border-radius:8px;margin-top:10px;}
+.prefix-color {padding:2px 6px;border-radius:4px;color:white;font-weight:700; font-size:14px;}
+
+/* ===== MEDIA QUERIES ===== */
+@media(max-width:900px){
+  #vitalSignList,#doneNumbersList {grid-template-columns:repeat(4,1fr);}
+}
+@media(max-width:700px){
+  #vitalSignList,#doneNumbersList {grid-template-columns:repeat(3,1fr);}
+  .queue-number {font-size:50px;}
+}
+@media(max-width:500px){
+  #tablesContainer {flex-direction:column;}
+  #vitalAndDone {flex-direction:column;}
   #vitalSignList,#doneNumbersList {grid-template-columns:repeat(2,1fr);}
+  .queue-number {font-size:40px; padding:10px;}
+  button {font-size:14px; padding:10px;}
+  h1,h2 {font-size:1.2rem;}
+}
+@media(max-width:400px){
+  .queue-number {font-size:32px; padding:8px;}
+  button {font-size:12px; padding:8px;}
+  h1,h2 {font-size:1rem;}
+}
 }
 .prefix-color {padding:2px 6px;border-radius:4px;color:white;font-weight:700;}
 #userMenuOverlay {
@@ -293,13 +328,28 @@ window.owcQueue=function(i){
   document.getElementById("nextBtn"+i).disabled=false;
 };
 
-window.recallQueue=function(i){
-  const parent=document.getElementById("tableBox"+i); parent.classList.add("pulse"); setTimeout(()=>parent.classList.remove("pulse"),1000);
-  const currentNum=document.getElementById("num"+i).textContent; if(!currentNum||currentNum==="0"||currentNum==="-") return;
-  const area=i===1?"Vital Sign Area":"Consultation Area"; const [prefix,numStr]=currentNum.split("-"); const num=parseInt(numStr,10);
-  const utterance=new SpeechSynthesisUtterance(`Now recalling, ${prefix} number ${num}. Please proceed to ${area}, table ${i}.`);
-  utterance.rate=1; utterance.pitch=1; window.speechSynthesis.speak(utterance);
+window.recallQueue = function(i) {
+  const tableBox = document.getElementById("tableBox" + i);
+  if (!tableBox) return;
+
+  // Visual pulse
+  tableBox.classList.add("pulse");
+  setTimeout(() => tableBox.classList.remove("pulse"), 1000);
+
+  const currentNum = document.getElementById("num" + i).textContent;
+  if (!currentNum || currentNum === "0" || currentNum === "-") return;
+
+  // Push a recall event to Firebase
+  const recallRef = ref(db, "recallEvents");
+  const newRecall = {
+    table: i,
+    number: currentNum,
+    timestamp: Date.now()
+  };
+  push(recallRef, newRecall);
 };
+
+
 
 /* -------------------- VITAL SIGN LIST -------------------- */
 function renderVitalSignList(num){
