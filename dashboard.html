@@ -1,62 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Pediatric Clinic Queue Dashboard</title>
 <style>
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    font-family: Segoe UI, Tahoma, sans-serif;
-    background: linear-gradient(135deg, #e6e8eb, #cfd3d6);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-#topHeader {
-    background-color: #4CAF50;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5em;
-    font-weight: bold;
-    text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    flex: 0 0 80px;
-}
-#mainContainer { display: flex; flex-direction: column; gap: 10px; padding: 10px 20px; flex: 1 1 auto; overflow-y: hidden; }
-#gridsContainer { display: flex; gap: 10px; flex: 1; overflow: hidden; }
-#leftPanel { flex: 1.5; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-#centerPanel { 
-    flex: 2; 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    grid-template-rows: auto 1fr 1fr; 
-    gap: 10px;
-}
-.area-header { font-size: 2em; font-weight: bold; text-align: center; border-radius: 25px; padding: 15px; color: #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-.table-box { border-radius: 25px; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.2s, box-shadow 0.2s; padding: 10px; overflow: hidden; }
-.table-box.highlight { animation: highlightPulse 1s ease-in-out; }
-@keyframes highlightPulse { 0% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform: scale(1); } 50% { box-shadow: 0 0 50px rgba(0,123,255,0.9); transform: scale(1.02); } 100% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform: scale(1); } }
-.title { font-size: 2em; font-weight: bold; margin-bottom: 15px; text-align: center; }
-#table1Box { background: #007bff; color: #fff; }
-#num1List { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(80px, auto); gap: 10px; width: 100%; overflow-y: auto; }
-#num1List .queue-number { width: 100%; display: flex; justify-content: center; align-items: center; font-weight: 900; border-radius: 20px; color: #fff; padding: 10px 0; font-size: 4em; text-align: center; transition: transform 0.2s; }
-#centerPanel .table-box { background: #28a745; color: #fff; }
-.queue-number-consult { font-weight: 900; border-radius: 20px; color: #fff; display: flex; justify-content: center; align-items: center; padding: 10px; font-size: 10em; transition: font-size 0.2s; overflow: hidden; }
-#owcContainer { background: rgba(245,245,245,0.5); backdrop-filter: blur(12px); border-radius: 25px; padding: 20px; flex: 0 0 250px; overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.08); margin-top: 10px; }
-#owcContainer h2 { font-size: 2em; margin-bottom: 20px; color: #d9534f; text-align: center; }
-#owcList { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-.owc-item { font-size: 1.8em; padding: 12px; border-radius: 15px; background: rgba(217,83,79,0.7); text-align: center; font-weight: bold; color: #fff; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 10px rgba(217,83,79,0.7); } 50% { box-shadow: 0 0 25px rgba(217,83,79,0.7); } 100% { box-shadow: 0 0 10px rgba(217,83,79,0.7); } }
-#startOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-#startOverlay button { padding: 20px 40px; font-size: 2em; border: none; border-radius: 15px; background: #007bff; color: white; cursor: pointer; }
-@media screen and (max-width: 1200px){ #gridsContainer { flex-direction: column; } #centerPanel { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; } #owcContainer { flex: 0 0 200px; } #owcList { grid-template-columns: repeat(3,1fr); } }
-@media screen and (max-width: 700px){ #owcList { grid-template-columns: repeat(2,1fr); } }
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    font-family: Segoe UI, Tahoma, Arial, sans-serif;
+    background: linear-gradient(135deg,#e6e8eb,#cfd3d6);
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+
+  #topHeader {
+    background:#4CAF50; color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:2.5em; font-weight:700; text-shadow:1px 1px 4px rgba(0,0,0,0.25);
+    box-shadow:0 4px 10px rgba(0,0,0,0.08); flex:0 0 80px;
+  }
+
+  #mainContainer { display:flex; flex-direction:column; gap:10px; padding:10px 20px; flex:1 1 auto; overflow:hidden; }
+  #gridsContainer { display:flex; gap:10px; flex:1; overflow:hidden; }
+  #leftPanel { flex:1.5; display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
+  #centerPanel {
+    flex:2; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr 1fr; gap:10px;
+  }
+
+  .area-header { font-size:2em; font-weight:700; text-align:center; border-radius:25px; padding:15px; color:#fff; box-shadow:0 8px 25px rgba(0,0,0,0.08); }
+  .table-box { border-radius:25px; display:flex; flex-direction:column; justify-content:flex-start; transition:transform .2s, box-shadow .2s; padding:10px; overflow:hidden; background:rgba(255,255,255,0.03); }
+
+  .title { font-size:2em; font-weight:700; margin-bottom:12px; text-align:center; }
+  #table1Box { background:#007bff; color:#fff; }
+  #num1List { display:grid; grid-template-columns:repeat(2,1fr); grid-auto-rows:minmax(80px,auto); gap:10px; width:100%; overflow-y:auto; }
+  .queue-number { width:100%; display:flex; justify-content:center; align-items:center; font-weight:900; border-radius:20px; color:#fff; padding:10px 0; font-size:4em; text-align:center; transition:transform .15s, opacity .2s; }
+
+  #centerPanel .table-box { background:#28a745; color:#fff; }
+  .queue-number-consult { font-weight:900; border-radius:20px; color:#fff; display:flex; justify-content:center; align-items:center; padding:10px; font-size:10em; transition:font-size .2s; overflow:hidden; }
+
+  /* Pulse effect for numbers only */
+  .queue-number.pulse, .queue-number-consult.pulse {
+    animation: highlightPulse 1s ease-in-out;
+  }
+
+  @keyframes highlightPulse {
+    0% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform:scale(1); }
+    50% { box-shadow: 0 0 50px rgba(0,123,255,0.9); transform:scale(1.2); }
+    100% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform:scale(1); }
+  }
+
+  #owcContainer {
+    background:rgba(245,245,245,0.55);
+    backdrop-filter:blur(8px);
+    border-radius:25px;
+    padding:20px;
+    flex:0 0 auto;
+    overflow:hidden;
+    box-shadow:0 8px 25px rgba(0,0,0,0.08);
+    margin-top:10px;
+    transition:opacity .35s ease, max-height .4s ease, transform .35s ease;
+    max-height:0;
+    opacity:0;
+    transform:scale(.995);
+  }
+
+  #owcContainer.visible {
+    opacity:1;
+    transform:scale(1);
+  }
+
+  #owcContainer.hidden {
+    opacity:0;
+    max-height:0;
+    padding-top:0;
+    padding-bottom:0;
+    transform:scale(.995);
+    pointer-events:none;
+  }
+
+  #owcContainer h2 { font-size:2em; margin-bottom:20px; color:#d9534f; text-align:center; }
+  #owcList { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; align-items:start; }
+  .owc-item { font-size:1.6em; padding:12px; border-radius:15px; background:rgba(217,83,79,0.85); text-align:center; font-weight:700; color:#fff; animation:pulse 1.5s infinite; opacity:0; transform:translateY(8px); }
+  @keyframes pulse { 0% { box-shadow:0 0 10px rgba(217,83,79,0.7);} 50% { box-shadow:0 0 25px rgba(217,83,79,0.7);} 100% { box-shadow:0 0 10px rgba(217,83,79,0.7);} }
+
+  #startOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; z-index:1000; }
+  #startOverlay button { padding:20px 40px; font-size:2em; border:none; border-radius:15px; background:#007bff; color:white; cursor:pointer; }
+
+  @media (max-width:1200px){
+    #gridsContainer{flex-direction:column;}
+    #centerPanel{grid-template-rows:auto auto auto;}
+    #owcList{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (max-width:700px){
+    #owcList{grid-template-columns:repeat(2,1fr);}
+    .queue-number-consult{font-size:6em;}
+    .queue-number{font-size:2.5em;}
+  }
+
 </style>
 </head>
 <body>
@@ -78,7 +116,7 @@ html, body {
     </div>
 
     <div id="centerPanel">
-      <div class="area-header" id="consultHeader" style="grid-column:1/3;text-align:center;background:#28a745;">CONSULTATION AREA</div>
+      <div class="area-header" style="grid-column:1/3;text-align:center;background:#28a745;">CONSULTATION AREA</div>
       <div class="table-box"><div class="title">Table 2</div><div class="queue-number-consult" id="num2">0</div></div>
       <div class="table-box"><div class="title">Table 3</div><div class="queue-number-consult" id="num3">0</div></div>
       <div class="table-box"><div class="title">Table 4</div><div class="queue-number-consult" id="num4">0</div></div>
@@ -86,7 +124,7 @@ html, body {
     </div>
   </div>
 
-  <div id="owcContainer">
+  <div id="owcContainer" class="hidden">
     <h2>OUT WHEN CALLED</h2>
     <div id="owcList"></div>
   </div>
@@ -94,7 +132,7 @@ html, body {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlGQraZ7m_cdzL2bCxWOb1A165gTwVRKQ",
@@ -110,147 +148,232 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const announcedNumbers = {};
-const announcedTimestamps = {};
+/* -------------------------- SPEECH SYSTEM -------------------------- */
+let voices = [];
+const preferredVoiceNames = ["Google US English","Google UK English Male","Google UK English Female"];
+
+function loadVoices() {
+  voices = window.speechSynthesis.getVoices().filter(v =>
+    preferredVoiceNames.includes(v.name)
+  );
+}
+loadVoices();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function getRandomVoice() { if(!voices.length) return null; return voices[Math.floor(Math.random()*voices.length)]; }
+
+/* -------------------------- SPEECH QUEUE -------------------------- */
 const speechQueue = [];
 let isSpeaking = false;
 
-const tableColors = { 1:"#007bff", 2:"#28a745",3:"#28a745",4:"#28a745",5:"#28a745", vip:"#ff9800" };
-
-const startBtn = document.getElementById('startBtn');
-const startOverlay = document.getElementById('startOverlay');
-const mainContainer = document.getElementById('mainContainer');
-
-startBtn.addEventListener('click', ()=>{
-  startOverlay.style.display = 'none';
-  mainContainer.style.display = 'flex';
-  speakQueuedNumber("Dashboard started",0,"");
-  loadVitalSignList();
-  loadTables();
-  loadOWCList();
-});
-
-function loadVitalSignList(){
-  const num1List = document.getElementById('num1List');
-  onValue(ref(db, "vitalSignList"), snap=>{
-    num1List.innerHTML = '';
-    const data = snap.val() || {};
-
-    const entries = Object.entries(data).sort((a,b)=>{
-      const [prefixA,numA] = a[1].number.split("-");
-      const [prefixB,numB] = b[1].number.split("-");
-      const prefixANum = isNaN(parseInt(prefixA)) ? prefixA : parseInt(prefixA);
-      const prefixBNum = isNaN(parseInt(prefixB)) ? prefixB : parseInt(prefixB);
-      if(prefixANum === prefixBNum) return parseInt(numA) - parseInt(numB);
-      return prefixANum > prefixBNum ? 1 : -1;
-    }).slice(0,10);
-
-    entries.forEach(([key,e])=>{
-      const div = document.createElement("div");
-      div.className = "queue-number";
-      div.textContent = e.number;
-
-      const [prefix] = e.number.split("-");
-      div.style.background = (prefix.toUpperCase()==="VIP") ? tableColors.vip : tableColors[1];
-      div.style.color = "#fff";
-      num1List.appendChild(div);
-
-      if(shouldAnnounce(e.number)){
-        speakQueuedNumber(e.number,1,"Now serving");
-        highlightTable(document.getElementById('table1Box'));
-      }
-    });
-  });
+function speakQueuedNumber(num, table, action="Now serving"){
+  speechQueue.push({num,table,action});
+  if(!isSpeaking) processSpeechQueue();
 }
 
-function loadTables(){
-  [2,3,4,5].forEach(i=>{
-    const numEl = document.getElementById(`num${i}`);
-    const boxEl = numEl.parentElement;
+function processSpeechQueue(){
+  if(speechQueue.length===0){ isSpeaking=false; return; }
+  isSpeaking=true;
 
-    onValue(ref(db, `tableNumbers/table${i}`), snap=>{
-      const val = snap.exists()?snap.val():"0";
-      numEl.textContent = val;
-      numEl.style.background = tableColors[i];
-      numEl.style.color = "#fff";
-      const len = val.length;
-      numEl.style.fontSize = len <= 3 ? '10em' : len <=5 ? '8em' : '6em';
+  const {num,table,action} = speechQueue.shift();
+  if(!num) return processSpeechQueue();
 
-      if(val!=="0" && val!=="-" && shouldAnnounce(val)){
-        speakQueuedNumber(val,i,"Now serving");
-        highlightTable(boxEl);
-      }
-    });
-  });
+  const [prefix,numStr] = (num||"").split("-");
+
+  // Map prefix "PP" to "PEDIA-PENADUR"
+  const spokenPrefix = prefix && prefix.toUpperCase() === "PP" ? "PEDIA-PENADUR" : prefix;
+
+  const number = parseInt(numStr||0,10) || numStr || num;
+  const area = table===1?"Vital Sign Area":"Consultation Area";
+  const text = action 
+    ? `${action}, ${spokenPrefix?spokenPrefix+' ':''}number ${number}. Please proceed to Pediatric Clinic Room 209 ${area} table ${table}.` 
+    : num;
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate=1; 
+  utter.pitch=1;
+  if(voices.length) utter.voice = getRandomVoice();
+
+  const beep = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=");
+  beep.play().then(()=>{ window.speechSynthesis.speak(utter); }).catch(()=>{ window.speechSynthesis.speak(utter); });
+
+  utter.onend = ()=>processSpeechQueue();
 }
 
-function loadOWCList(){
-  const owcList = document.getElementById("owcList");
-  onValue(ref(db,"owc"), snap=>{
-    owcList.innerHTML='';
-    if(!snap.exists()) return;
-
-    const sortedOWC = Object.values(snap.val()).sort((a,b)=>{
-      const [pA,numA]=a.number.split("-");
-      const [pB,numB]=b.number.split("-");
-      if(pA===pB) return parseInt(numA,10)-parseInt(numB,10);
-      return pA.localeCompare(pB);
-    });
-
-    sortedOWC.forEach(e=>{
-      const div=document.createElement("div");
-      div.className="owc-item";
-      div.textContent=`${e.number} (Table ${e.table})`;
-      owcList.appendChild(div);
-    });
-  });
-}
-
-function shouldAnnounce(numberText){
+/* -------------------------- ANNOUNCE TRACKING -------------------------- */
+let announcedTimestamps = JSON.parse(localStorage.getItem('announcedTimestamps')||'{}');
+function shouldAnnounce(num,table){
+  if(!num) return false;
+  const key = `${table}_${num}`;
   const now = Date.now();
-  if(!announcedTimestamps[numberText] || now - announcedTimestamps[numberText] > 10000){ // 10s
-    announcedTimestamps[numberText] = now;
+  if(!announcedTimestamps[key] || now - announcedTimestamps[key] > 15000){
+    announcedTimestamps[key] = now;
+    localStorage.setItem('announcedTimestamps',JSON.stringify(announcedTimestamps));
     return true;
   }
   return false;
 }
 
-function speakQueuedNumber(numberText, tableNumber, action="Now serving"){
-  speechQueue.push({numberText, tableNumber, action});
-  if(!isSpeaking) processSpeechQueue();
+/* -------------------------- DASHBOARD VARIABLES -------------------------- */
+let vitalDisplayed = new Set(JSON.parse(localStorage.getItem('vitalDisplayed')||'[]'));
+const tableColors = { 1:"#007bff",2:"#28a745",3:"#28a745",4:"#28a745",5:"#28a745", vip:"#ff9800" };
+
+function updateVitalDisplayed(numbers){
+  numbers.forEach(n=>vitalDisplayed.add(n));
+  localStorage.setItem('vitalDisplayed',JSON.stringify([...vitalDisplayed]));
 }
 
-function processSpeechQueue(){
-  if(speechQueue.length === 0){
-    isSpeaking = false;
-    return;
-  }
-  isSpeaking = true;
-  const {numberText, tableNumber, action} = speechQueue.shift();
-  if(!numberText) { processSpeechQueue(); return; }
+/* -------------------------- VITAL SIGN TABLE 1 -------------------------- */
+function loadVitalSignList() {
+  const num1List = document.getElementById('num1List');
 
-  const [prefix,numStr] = numberText.split("-");
-  const number = parseInt(numStr || "0");
-  const area = tableNumber===1?"Vital Sign Area":"Consultation Area";
+  // Track announced numbers in-memory for this session only
+  const announcedNumbers = new Set();
 
-  const utterance = new SpeechSynthesisUtterance(
-    action ? `${action}, ${prefix} number ${number}. Please proceed to Pediatric Clinic Room 208, ${area}, table ${tableNumber}.` : numberText
-  );
-  utterance.onend = processSpeechQueue;
+  onValue(ref(db, "vitalSignList"), snap => {
+    const data = snap.val() || {};
 
-  // VIP voice
-  utterance.pitch = (prefix && prefix.toUpperCase()==="VIP") ? 1.5 : 1;
-  utterance.rate = (prefix && prefix.toUpperCase()==="VIP") ? 1.1 : 1;
+    // Sort entries and take top 10
+    const entries = Object.entries(data)
+      .sort((a, b) => {
+        const [pA, nA] = (a[1].number || "").split("-");
+        const [pB, nB] = (b[1].number || "").split("-");
+        if (pA === pB) return parseInt(nA || 0, 10) - parseInt(nB || 0, 10);
+        return (pA || "").localeCompare(pB || "");
+      })
+      .slice(0, 10);
 
-  // Beep before speaking
-  const beep = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=");
-  beep.play().then(()=>window.speechSynthesis.speak(utterance));
+    // Clear current list
+    num1List.innerHTML = "";
+
+    entries.forEach(([key, e]) => {
+      const number = e.number || "";
+
+      const div = document.createElement("div");
+      div.className = "queue-number";
+      div.textContent = number;
+
+      // VIP coloring
+      const [prefix] = number.split("-");
+      div.style.background = (prefix && prefix.toUpperCase() === "VIP") ? "#ff9800" : "#007bff";
+
+      num1List.appendChild(div);
+
+      // Announce any number that hasn't been announced this session
+      if (!announcedNumbers.has(number)) {
+        announcedNumbers.add(number);
+
+        // Speak number
+        speakQueuedNumber(number, 1, "Now serving");
+
+        // Pulse effect
+        requestAnimationFrame(() => {
+          div.classList.add("pulse");
+          setTimeout(() => div.classList.remove("pulse"), 1000);
+        });
+      }
+    });
+  });
 }
 
-function highlightTable(box){ 
-  box.classList.add('highlight'); 
-  setTimeout(()=>box.classList.remove('highlight'),1000); 
+/* -------------------------- TABLES 2-5 (hold last number) -------------------------- */
+function loadTables(){
+  [2,3,4,5].forEach(i => {
+    const numEl = document.getElementById(`num${i}`);
+
+    // Initialize displayed number with 0 if empty
+    if(!numEl.textContent) numEl.textContent = "0";
+
+    onValue(ref(db, `tableNumbers/table${i}`), snap => {
+      const val = snap.exists() ? snap.val() : null;
+
+      // Only update if there’s a new valid number
+      if(val && val !== "-" && val !== numEl.textContent){
+        numEl.textContent = val;
+
+        // Set background and text color
+        numEl.style.background = tableColors[i]; 
+        numEl.style.color = "#fff";
+
+        // Adjust font size based on length
+        const len = val.length;
+        numEl.style.fontSize = len <= 3 ? '10em' : len <= 5 ? '8em' : '6em';
+
+        // Pulse and announce new number
+        if(shouldAnnounce(val, i)){
+          speakQueuedNumber(val, i, "Now serving");
+          numEl.classList.add("pulse");
+          setTimeout(() => numEl.classList.remove("pulse"), 1000);
+        }
+      }
+    });
+  });
 }
+
+
+/* -------------------------- OWC LIST -------------------------- */
+function loadOWCList(){
+  const owcContainer=document.getElementById('owcContainer');
+  const owcList=document.getElementById('owcList');
+
+  onValue(ref(db,"owc"), snap=>{
+    owcList.innerHTML='';
+    if(!snap.exists()){
+      owcContainer.classList.add('hidden'); owcContainer.classList.remove('visible');
+      owcContainer.style.maxHeight="0px"; return;
+    }
+
+    const values=Object.values(snap.val()||{});
+    const sorted=values.sort((a,b)=>{
+      const [pA,nA]=(a.number||"").split("-");
+      const [pB,nB]=(b.number||"").split("-");
+      if(pA===pB) return parseInt(nA||0)-parseInt(nB||0);
+      return (pA||"").localeCompare(pB||"");
+    });
+
+    sorted.forEach(e=>{
+      const div=document.createElement('div');
+      div.className='owc-item';
+      div.textContent=`${e.number} (Table ${e.table})`;
+      owcList.appendChild(div);
+      requestAnimationFrame(()=>{ div.style.transition="opacity .28s ease, transform .28s ease"; div.style.opacity=1; div.style.transform="translateY(0)"; });
+    });
+
+    if(sorted.length>0){
+      owcContainer.classList.remove('hidden'); owcContainer.classList.add('visible');
+      requestAnimationFrame(()=>{ owcContainer.style.maxHeight = owcContainer.scrollHeight + "px"; });
+    } else {
+      owcContainer.classList.remove('visible'); owcContainer.classList.add('hidden'); owcContainer.style.maxHeight="0px";
+    }
+  });
+}
+
+/* -------------------------- RECALL EVENTS -------------------------- */
+onValue(ref(db,"recallEvents"), snap=>{
+  if(!snap.exists()) return;
+  const events=Object.values(snap.val());
+  events.forEach(e=>{
+    let numEl;
+    if(e.table===1){
+      numEl = Array.from(document.querySelectorAll('#num1List .queue-number')).find(d=>d.textContent===e.number);
+    } else numEl=document.getElementById('num'+e.table);
+
+    if(numEl){ numEl.classList.add("pulse"); setTimeout(()=>numEl.classList.remove("pulse"),1000); }
+    speakQueuedNumber(e.number,e.table,"Now recalling");
+  });
+  remove(ref(db,"recallEvents"));
+});
+
+/* -------------------------- START DASHBOARD -------------------------- */
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  document.getElementById('startOverlay').style.display='none';
+  document.getElementById('mainContainer').style.display='flex';
+  speakQueuedNumber("Dashboard started",0,"");
+  loadVitalSignList();
+  loadTables();
+  loadOWCList();
+});
 </script>
 </body>
 </html>
