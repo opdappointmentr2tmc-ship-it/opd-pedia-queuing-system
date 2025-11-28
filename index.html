@@ -214,8 +214,8 @@
     </div>
   </div>
 <div style="margin-bottom:12px;">
-  <button id="headerToggleBtn" class="small-btn" onclick="toggleHeader()" style="background:#17a2b8;color:#fff;">
-    Hide Header
+  <button id="headerToggleBtn" class="small-btn" onclick="toggleHeader()" style="background:#17a2b8;color:#fff;display:flex;align-items:center;justify-content:center;">
+    <span id="headerToggleIcon" style="display:inline-block;transition: transform 0.4s ease;">▾</span>
   </button>
 </div>
 
@@ -401,14 +401,14 @@
 
 window.toggleHeader = function() {
   const header = document.getElementById("headerBar");
-  const btn = document.getElementById("headerToggleBtn");
+  const icon = document.getElementById("headerToggleIcon");
 
   if(header.classList.contains("collapsed")) {
     header.classList.remove("collapsed"); // show
-    btn.textContent = "Hide Header";
+    icon.style.transform = "rotate(0deg)";
   } else {
     header.classList.add("collapsed");    // hide
-    btn.textContent = "Show Header";
+    icon.style.transform = "rotate(-90deg)"; // points sideways when hidden
   }
 };
 
