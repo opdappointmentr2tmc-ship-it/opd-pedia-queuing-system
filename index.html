@@ -1,435 +1,752 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pediatric Clinic Queueing System</title>
 <style>
-/* ===== BASE STYLES ===== */
-:root {
-  --bg: #f0f2f5;
-  --primary: #007bff;
-  --done: #6c757d;
-  --owc: #ffc107;
-  --recall: #17a2b8;
-  --success: #28a745;
-  --danger: #dc3545;
+  /* ====== THEME / BASE ====== */
+  :root{
+    --bg:#f0f2f5;
+    --primary:#007bff;
+    --done:#6c757d;
+    --owc:#ffc107;
+    --recall:#17a2b8;
+    --success:#28a745;
+    --danger:#dc3545;
+    --card-bg: #ffffff;
+    --shadow: 0 8px 25px rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI, Tahoma, sans-serif}
+  body{background:var(--bg);color:#222;padding:20px;min-height:100vh}
+
+  /* ===== HEADER ===== */
+  #headerBar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  h1{font-size:1.4rem}
+  #settingsButton{padding:12px 16px;border-radius:10px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:700}
+
+  /* ===== LAYOUT ===== */
+  #tablesContainer{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+  #tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;flex:1}
+  .table-box{background:var(--card-bg);padding:18px;border-radius:14px;box-shadow:var(--shadow);text-align:center;transition:all .25s ease}
+  .table-box.highlight{animation:highlightPulse 1s ease-in-out}
+  @keyframes highlightPulse{0%{box-shadow:0 0 20px rgba(40,167,69,0.75);transform:scale(1)}50%{box-shadow:0 0 40px rgba(40,167,69,0.9);transform:scale(1.03)}100%{box-shadow:0 0 20px rgba(40,167,69,0.75);transform:scale(1)}}
+  .table-box.pulse{animation:pulseRecall 1s ease-in-out}
+  @keyframes pulseRecall{0%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1)}50%{box-shadow:0 0 40px rgba(23,162,184,0.95);transform:scale(1.05)}100%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1)}}
+
+  .queue-number{font-size:60px;font-weight:900;background:#e7eaed;padding:16px;border-radius:12px;margin:18px 0;word-break:break-word}
+
+  button.common{padding:10px;border-radius:10px;border:none;font-weight:700;color:#fff;cursor:pointer}
+  .next-btn{background:var(--primary)}
+  .done-btn{background:var(--done)}
+  .owc-btn{background:var(--owc);color:#222}
+  .recall-btn{background:var(--recall)}
+  .small-btn{padding:6px 10px;border-radius:8px;font-weight:700}
+
+  /* ===== RIGHT COLUMN ===== */
+  #owcContainer{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+  #owcContainer .card{background:var(--card-bg);padding:14px;border-radius:14px;box-shadow:var(--shadow)}
+
+  /* ===== VITAL & DONE ===== */
+  #vitalAndDone{display:flex;gap:20px;margin-top:24px;flex-wrap:wrap}
+  #vitalSignContainer,#doneContainer{flex:1;min-width:220px}
+  h2.section-title{font-size:1.05rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+  /* list grids */
+  .done-number{background:#dfe4e8;padding:10px;height:60px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:900;word-break:break-word}
+  .owc-item{background:#f7f7f7;padding:12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:16px;word-break:break-word}
+
+  /* ===== COLLAPSIBLE PANEL (SLIDE) =====
+     We'll animate max-height. Set a generous max-height so it can contain content.
+  */
+  .collapsible-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .toggle-btn{background:transparent;border:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;padding:6px;border-radius:8px}
+  .toggle-btn .arrow{display:inline-block;transition:transform .28s ease}
+  .toggle-btn.collapsed .arrow{transform:rotate(-90deg)}
+
+  .collapsible-content{overflow:hidden;max-height:1200px;transition:max-height .36s ease,opacity .28s ease;padding-top:10px}
+  .collapsible-content.collapsed{max-height:0;padding-top:0;opacity:0}
+
+  /* small UI helpers */
+  .prefix-dropdown{width:100%;padding:8px;border-radius:8px;margin-top:10px;text-align:center}
+  .prefix-color{padding:4px 8px;border-radius:6px;color:#fff;font-weight:800;font-size:13px;margin-right:6px}
+  .controls-row{display:flex;gap:8px;margin-top:8px}
+  .owc-list{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow-y:auto;padding-right:6px}
+  .vital-list-grid,.done-list-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-height:500px;overflow-y:auto}
+  @media(max-width:900px){ .vital-list-grid,.done-list-grid{grid-template-columns:repeat(4,1fr)} }
+  @media(max-width:700px){ .vital-list-grid,.done-list-grid{grid-template-columns:repeat(3,1fr)} .queue-number{font-size:50px} }
+  @media(max-width:500px){ #tablesContainer{flex-direction:column} #vitalAndDone{flex-direction:column} .vital-list-grid,.done-list-grid{grid-template-columns:repeat(2,1fr)} .queue-number{font-size:40px;padding:10px} button.common{font-size:14px;padding:10px} h1,h2{font-size:1.1rem} }
+  @media(max-width:400px){ .queue-number{font-size:32px;padding:8px} button.common{font-size:12px;padding:8px} h1,h2{font-size:1rem} }
+
+  /* modals & overlays */
+  #modalOverlay,#userMenuOverlay{position:fixed;top:0;left:0;width:100%;height:100%;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,0.45);z-index:2000}
+  #userMenuBox,#modalBox{background:#fff;padding:22px;border-radius:16px;width:90%;max-width:360px;text-align:center;box-shadow:var(--shadow)}
+  .toast{position:fixed;top:20px;right:20px;background:#333;color:#fff;padding:10px 14px;border-radius:8px;opacity:0.95;z-index:3000;font-size:14px}
+
+  /* tiny action buttons inside lists */
+  .list-action-btn{padding:6px 8px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+  .restore-select{padding:6px;border-radius:6px;border:1px solid #ccc;font-weight:600;margin-right:8px}
+/* Make table buttons big and full width */
+.table-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
 }
 
-* {margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Tahoma,sans-serif;}
-body {background: var(--bg); padding:20px; color:#333; min-height:100vh;}
-h1,h2 {margin-bottom:10px; font-size:1.5rem;}
-#headerBar {display:flex;justify-content:space-between;align-items:center;margin-bottom:20px; flex-wrap: wrap;}
-#settingsButton {padding:12px;font-size:16px;border-radius:10px;background:var(--primary);color:white;font-weight:700;border:none;cursor:pointer;width:auto; margin-top:10px;}
-#tablesContainer {display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;}
-#tables {display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;flex:1;}
+.table-buttons .common {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+/* SETTINGS MODAL BUTTON STACK - PERFECTLY CENTERED */
+.settings-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* centers the entire group */
+  justify-content: center; /* vertically centers inside modal */
+  width: 100%;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.settings-buttons button {
+  width: 92%;              /* slight side margin */
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 12px;
+}
+/* Vital Sign List items */
+#vitalSignList .done-number {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 900;
+  word-break: break-word;  /* wrap long text */
+  overflow: hidden;        /* prevent overflow */
+}
+
+#vitalSignList .done-number div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;        /* wrap prefix + number to next line if needed */
+}
+
+.prefix-color {
+  flex-shrink: 0;         /* prevent shrinking */
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;        /* smaller font to prevent overflow */
+  font-weight: 800;
+  white-space: nowrap;     /* keep prefix text in one line */
+}
+
+#vitalSignList .done-number span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis; /* truncate with ... if number is too long */
+  max-width: 60px;          /* adjust width to fit box */
+}
 
 
-/* ===== TABLE BOX ===== */
-.table-box {background:white;padding:20px;border-radius:18px;box-shadow:0 8px 25px rgba(0,0,0,0.1);text-align:center;transition: all 0.3s ease;}
-.table-box.pulse{animation:pulseRecall 1s ease-in-out;}
-@keyframes pulseRecall{0%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1);}50%{box-shadow:0 0 40px rgba(23,162,184,0.9);transform:scale(1.05);}100%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1);}}
-.table-box.highlight{animation:highlightPulse 1s ease-in-out;}
-@keyframes highlightPulse{0%{box-shadow:0 0 20px rgba(40,167,69,0.8);transform:scale(1);}50%{box-shadow:0 0 40px rgba(40,167,69,0.9);transform:scale(1.03);}100%{box-shadow:0 0 20px rgba(40,167,69,0.8);transform:scale(1);}}
-
-button {padding:12px;margin-top:10px;width:100%;border:none;border-radius:10px;font-size:16px;color:white;font-weight:700;cursor:pointer;}
-.next-btn {background:var(--primary);} 
-.done-btn {background:var(--done);} 
-.owc-btn {background:var(--owc);color:#333;} 
-.recall-btn {background:var(--recall);}
-.queue-number {font-size:60px;font-weight:900;background:#e0e4e8;padding:15px;border-radius:15px;margin:20px 0;word-break: break-word;}
-
-/* ===== VITAL & DONE LIST ===== */
-#vitalAndDone {display:flex;gap:20px;margin-top:30px;flex-wrap:wrap;}
-#vitalSignContainer {flex:1; min-width:200px;}
-#vitalSignList,#doneNumbersList {display:grid;grid-template-columns:repeat(5,1fr);gap:10px; max-height:500px; overflow-y:auto;}
-.done-number {background:#d0d4d8;padding:10px;height:60px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:900; word-break: break-word;}
-.owc-item {background:#ececec;padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:18px; word-break: break-word;}
-#owcContainer {width:280px; max-width:100%; overflow-x:hidden;}
-#owcList {max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
-
-/* ===== MODALS ===== */
-#modalOverlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:center;}
-#modalBox {background:white;padding:20px;border-radius:20px;width:90%;max-width:350px;text-align:center;}
-#userMenuOverlay {position: fixed;top:0; left:0;width:100%; height:100%;background: rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center; z-index:2000;}
-#userMenuBox {background:white;padding:20px;border-radius:18px;width:90%;max-width:320px;text-align:center;}
-#tableSelectMenu {width:100%; padding:10px; font-size:16px; border-radius:8px;}
-
-/* ===== TOAST ===== */
-.toast {position:fixed;top:20px;right:20px;background:#333;color:white;padding:10px 16px;border-radius:8px;opacity:0.9;z-index:1000; font-size:14px;}
-
-/* ===== PREFIX ===== */
-.prefix-dropdown {width:100%;padding:8px;font-size:16px;border-radius:8px;margin-top:10px;}
-.prefix-color {padding:2px 6px;border-radius:4px;color:white;font-weight:700; font-size:14px;}
-
-/* ===== MEDIA QUERIES ===== */
-@media(max-width:900px){
-  #vitalSignList,#doneNumbersList {grid-template-columns:repeat(4,1fr);}
-}
-@media(max-width:700px){
-  #vitalSignList,#doneNumbersList {grid-template-columns:repeat(3,1fr);}
-  .queue-number {font-size:50px;}
-}
-@media(max-width:500px){
-  #tablesContainer {flex-direction:column;}
-  #vitalAndDone {flex-direction:column;}
-  #vitalSignList,#doneNumbersList {grid-template-columns:repeat(2,1fr);}
-  .queue-number {font-size:40px; padding:10px;}
-  button {font-size:14px; padding:10px;}
-  h1,h2 {font-size:1.2rem;}
-}
-@media(max-width:400px){
-  .queue-number {font-size:32px; padding:8px;}
-  button {font-size:12px; padding:8px;}
-  h1,h2 {font-size:1rem;}
-}
-}
-.prefix-color {padding:2px 6px;border-radius:4px;color:white;font-weight:700;}
-#userMenuOverlay {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background: rgba(0,0,0,0.6);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:2000;
-}
-#userMenuBox {
-  background:white;
-  padding:30px;
-  border-radius:18px;
-  width:300px;
-  text-align:center;
-}
-#tableSelectMenu {
-  width:100%;
-  padding:12px;
-  font-size:18px;
-  border-radius:10px;
-}
 </style>
 </head>
 <body>
-<!-- ===== STARTUP USER MENU ===== -->
-<div id="userMenuOverlay">
-  <div id="userMenuBox">
-    <h2>Select Your Table</h2>
-    <select id="tableSelectMenu">
-      <option value="">-- Choose Table --</option>
-      <option value="1">Table 1</option>
-      <option value="2">Table 2</option>
-      <option value="3">Table 3</option>
-      <option value="4">Table 4</option>
-      <option value="5">Table 5</option>
-      <option value="all">Nurse Station (Show All Tables)</option>
-    </select>
-    <button onclick="confirmTableSelection()" style="margin-top:15px;background:#007bff;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:700;">
-      Continue
-    </button>
+  <!-- STARTUP USER MENU -->
+  <div id="userMenuOverlay">
+    <div id="userMenuBox">
+      <h2>Select Your Table</h2>
+      <select id="tableSelectMenu" style="width:100%;padding:10px;margin-top:10px;border-radius:8px;font-size:16px">
+        <option value="">-- Choose Table --</option>
+        <option value="1">Table 1</option>
+        <option value="2">Table 2</option>
+        <option value="3">Table 3</option>
+        <option value="4">Table 4</option>
+        <option value="5">Table 5</option>
+        <option value="all">Nurse Station (Show All Tables)</option>
+      </select>
+      <button class="small-btn" style="margin-top:14px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:800" onclick="confirmTableSelection()">Continue</button>
+    </div>
   </div>
+
+  <div id="headerBar">
+    <h1>Pediatric Clinic Queueing System</h1>
+    <button id="settingsButton" onclick="showSettings()">Settings ⚙️</button>
+  </div>
+
+  <div id="tablesContainer">
+    <div id="tables"></div>
+
+    <div id="owcContainer">
+      <div class="card">
+        <div class="collapsible-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <h2 class="section-title" style="margin:0;font-size:1rem">OUT WHEN CALLED</h2>
+            
+          </div>
+          <button id="owcToggleBtn" class="toggle-btn" onclick="toggleOWC()" aria-expanded="true" title="Toggle OWC list">
+            <span class="arrow">▾</span>
+            <span id="owcToggleLabel">Hide</span>
+          </button>
+        </div>
+
+        <!-- collapsible content -->
+        <div id="owcContent" class="collapsible-content">
+          <div id="owcList" class="owc-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="vitalAndDone">
+    <div id="vitalSignContainer">
+      <div class="card">
+        <div class="collapsible-header">
+          <h2 class="section-title" style="margin:0">Vital Sign List</h2>
+          <button id="vitalToggleBtn" class="toggle-btn" onclick="toggleVital()" aria-expanded="true" title="Toggle Vital Sign list">
+            <span class="arrow">▾</span>
+            <span id="vitalToggleLabel">Hide</span>
+          </button>
+        </div>
+        <div id="vitalContent" class="collapsible-content">
+          <div id="vitalSignList" class="vital-list-grid" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="doneContainer" style="flex:1">
+      <div class="card">
+        <div class="collapsible-header">
+          <h2 class="section-title" style="margin:0">Done Numbers</h2>
+          <button id="doneToggleBtn" class="toggle-btn" onclick="toggleDone()" aria-expanded="true" title="Toggle Done list">
+            <span class="arrow">▾</span>
+            <span id="doneToggleLabel">Hide</span>
+          </button>
+        </div>
+        <div id="doneContent" class="collapsible-content">
+          <div id="doneNumbersList" class="done-list-grid" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="modalOverlay">
+    <div id="modalBox">
+      <h2>Settings</h2>
+      <label style="display:block;margin-top:10px">Custom Prefixes (comma separated)</label>
+      <input id="prefixInput" type="text" style="width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc">
+<div class="settings-buttons">
+  <button onclick="savePrefix()" style="background:var(--primary);">SAVE PREFIXES</button>
+  <button onclick="resetQueues()" style="background:var(--danger);">RESET QUEUES & OWC</button>
+  <button onclick="changeTable()" style="background:#17a2b8;">CHANGE TABLE</button>
+
+  <button onclick="closeSettings()" style="background:var(--success);">CLOSE</button>
 </div>
 
-<div id="headerBar">
-  <h1>Pediatric Clinic Queueing System</h1>
-  <button id="settingsButton" onclick="showSettings()">Settings ⚙️</button>
-</div>
-
-<div id="tablesContainer">
-  <div id="tables"></div>
-  <div id="owcContainer">
-    <h2>OWC LIST</h2>
-    <div id="owcList"></div>
+      </div>
+    </div>
   </div>
-</div>
 
-<div id="vitalAndDone">
-  <div id="vitalSignContainer">
-    <h2>Vital Sign List (Max 10)</h2>
-    <div id="vitalSignList"></div>
-  </div>
-  <div style="flex:1;">
-    <h2>Done Numbers (Table 1)</h2>
-    <div id="doneNumbersList"></div>
-  </div>
-</div>
-
-<div id="modalOverlay">
-  <div id="modalBox">
-    <h2>Settings</h2>
-    <label>Custom Prefixes (comma separated)</label>
-    <input id="prefixInput" type="text" style="width:100%; padding:8px; margin-top:8px;">
-    <button onclick="savePrefix()" style="background:var(--primary);">Save Prefixes</button>
-    <button onclick="resetQueues()" style="background:var(--danger);">Reset Queues & OWC</button>
-    <button onclick="changeTable()" style="background:#17a2b8;">Change Table</button>
-    <button onclick="closeSettings()" style="background:var(--success);">Close</button>
-  </div>
-</div>
-
-<div id="toastContainer"></div>
+  <div id="toastContainer"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-/* -------------------- CONFIG -------------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyDlGQraZ7m_cdzL2bCxWOb1A165gTwVRKQ",
-  authDomain: "r2tmc-opd-pedia-qs.firebaseapp.com",
-  projectId: "r2tmc-opd-pedia-qs",
-  storageBucket: "r2tmc-opd-pedia-qs.appspot.com",
-  messagingSenderId: "467931438036",
-  appId: "1:467931438036:web:7a15d05ff4a159116e9441",
-  databaseURL: "https://r2tmc-opd-pedia-qs-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-/* -------------------- STATE -------------------- */
-const TOTAL_TABLES = 5;
-const MAX_VITAL_SIGN = 10;
-let selectedTable = localStorage.getItem("selectedTable") || null;
-let prefixes = [];
-let seriesByPrefix = {};
-let table1DoneNumbers = [];
-let usedNumbers = new Set();
-
-/* -------------------- UTILITY -------------------- */
-function toast(msg){ const d=document.createElement("div"); d.className="toast"; d.textContent=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),3000);}
-function stringToColor(str){ let hash=0; for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);} const c=(hash&0x00FFFFFF).toString(16).toUpperCase(); return "#"+("00000".substring(0,6-c.length)+c);}
-
-/* -------------------- TABLE SELECTION -------------------- */
-window.confirmTableSelection = function(){
-  const chosen = document.getElementById("tableSelectMenu").value;
-  if(!chosen){ toast("Please select a table."); return; }
-  selectedTable = (chosen==="all")?"all":parseInt(chosen);
-  localStorage.setItem("selectedTable", selectedTable);
-  applyTablePermissions();
-  document.getElementById("userMenuOverlay").style.display="none";
-};
-window.changeTable = function(){
-  localStorage.removeItem("selectedTable");
-  document.getElementById("userMenuOverlay").style.display="flex";
-  closeSettings();
-};
-window.addEventListener("load",()=>{
-  const overlay = document.getElementById("userMenuOverlay");
-  overlay.style.display="flex";
-  if(selectedTable){
-    const selectMenu=document.getElementById("tableSelectMenu");
-    selectMenu.value=selectedTable==="all"?"all":selectedTable;
-  }
-});
-
-/* -------------------- RENDER TABLES -------------------- */
-function renderTables(){
-  let html="";
-  for(let i=1;i<=TOTAL_TABLES;i++){
-    html+=`<div class="table-box" id="tableBox${i}">
-      <h2>Table ${i}</h2>
-      <select id="prefixSelect${i}" class="prefix-dropdown" aria-label="Select Prefix"></select>
-      <div id="num${i}" class="queue-number" aria-label="Queue Number">0</div>
-      ${i!==1?`<button id="doneBtn${i}" class="done-btn" onclick="doneQueue(${i})">Done</button>`:""}
-      <button id="nextBtn${i}" class="next-btn" onclick="nextQueue(${i})" ${i!==1?"disabled":""}>Next</button>
-      ${i!==1?`<button class="owc-btn" onclick="owcQueue(${i})">OWC</button>`:""}
-      <button class="recall-btn" onclick="recallQueue(${i})">Recall</button>
-    </div>`;
-  }
-  document.getElementById("tables").innerHTML=html;
-}
-renderTables();
-
-/* -------------------- APPLY TABLE PERMISSIONS -------------------- */
-function applyTablePermissions(){
-  const vitalContainer=document.getElementById("vitalSignContainer");
-  for(let i=1;i<=TOTAL_TABLES;i++){
-    const box=document.getElementById("tableBox"+i);
-    if(selectedTable==="all"||i===selectedTable) box.style.display="block";
-    else box.style.display="none";
-  }
-  if(selectedTable===1||selectedTable==="all") vitalContainer.style.display="block";
-  else vitalContainer.style.display="none";
-}
-
-/* -------------------- PREFIXES -------------------- */
-onValue(ref(db,"settings/prefixes"),snap=>{
-  prefixes = snap.exists()?snap.val():[];
-  document.getElementById("prefixInput").value=prefixes.join(",");
-  for(let i=1;i<=TOTAL_TABLES;i++){
-    const sel=document.getElementById("prefixSelect"+i); sel.innerHTML="";
-    prefixes.forEach(p=>{ const o=document.createElement("option"); o.value=o.textContent=p; sel.appendChild(o);});
-  }
-});
-onValue(ref(db,"prefixSeries"),snap=>{ seriesByPrefix = snap.exists()?snap.val():{}; });
-
-/* -------------------- TABLE NUMBERS -------------------- */
-for(let i=1;i<=TOTAL_TABLES;i++){
-  onValue(ref(db,"tableNumbers/table"+i),snap=>{
-    if(snap.exists()){ 
-      const val=snap.val(); 
-      document.getElementById("num"+i).textContent=val; 
-      if(i!==1 && val!=="0" && val!=="-") usedNumbers.add(val); 
-    }
-  });
-}
-
-/* -------------------- TABLE1 DONE NUMBERS -------------------- */
-onValue(ref(db,"table1DoneNumbers"),snap=>{
-  table1DoneNumbers = snap.exists()?snap.val():[];
-  renderDoneList();
-});
-
-/* -------------------- NEXT / DONE / OWC / RECALL LOGIC -------------------- */
-function sortTable1DoneNumbers(){
-  table1DoneNumbers.sort((a,b)=>{
-    const [pA,nA]=a.split("-"), [pB,nB]=b.split("-");
-    if(pA!==pB) return prefixes.indexOf(pA)-prefixes.indexOf(pB);
-    return parseInt(nA,10)-parseInt(nB,10);
-  });
-}
-function getNextAvailableNumber(prefix){
-  // Always take the first matching prefix in the sorted done list
-  return table1DoneNumbers.find(n => n.startsWith(prefix)) || null;
-}
-
-window.nextQueue=function(i){
-  const prefix=document.getElementById("prefixSelect"+i).value;
-  if(!prefix) return;
-  if(i===1){
-    const list=document.getElementById("vitalSignList");
-    if(list.children.length>=MAX_VITAL_SIGN){ toast("Vital Sign List max "+MAX_VITAL_SIGN+"!"); return; }
-    if(!seriesByPrefix[prefix]) seriesByPrefix[prefix]=0; seriesByPrefix[prefix]++;
-    const newNum = `${prefix}-${String(seriesByPrefix[prefix]).padStart(3,"0")}`;
-    document.getElementById("num1").textContent=newNum;
-    addToVitalSignList(newNum);
-    set(ref(db,"tableNumbers/table1"),newNum);
-    set(ref(db,"prefixSeries"),seriesByPrefix);
-    highlightTable(1); return;
-  }
-  const nextNum=getNextAvailableNumber(prefix);
-  if(!nextNum){ toast("No available number for "+prefix); return;}
-  const el=document.getElementById("num"+i); el.textContent=nextNum;
-  usedNumbers.add(nextNum); table1DoneNumbers = table1DoneNumbers.filter(n=>n!==nextNum);
-  sortTable1DoneNumbers(); set(ref(db,"tableNumbers/table"+i),nextNum);
-  renderDoneList(); document.getElementById("nextBtn"+i).disabled=true; highlightTable(i);
-};
-
-window.doneQueue=function(i){
-  const el=document.getElementById("num"+i), num=el.textContent;
-  if(num && num!=="0" && num!=="-"){ if(i===1){ table1DoneNumbers.push(num); sortTable1DoneNumbers(); renderDoneList(); } }
-  el.textContent="-"; set(ref(db,"tableNumbers/table"+i),"-");
-  document.getElementById("nextBtn"+i).disabled=false; highlightTable(i);
-};
-
-window.owcQueue=function(i){
-  const el=document.getElementById("num"+i); const num=el.textContent;
-  if(!num||num==="0"||num==="-") return;
-  push(ref(db,"owc"),{table:i,number:num,time:Date.now()});
-  el.textContent="0";
-  document.getElementById("nextBtn"+i).disabled=false;
-};
-
-window.recallQueue = function(i) {
-  const tableBox = document.getElementById("tableBox" + i);
-  if (!tableBox) return;
-
-  // Visual pulse
-  tableBox.classList.add("pulse");
-  setTimeout(() => tableBox.classList.remove("pulse"), 1000);
-
-  const currentNum = document.getElementById("num" + i).textContent;
-  if (!currentNum || currentNum === "0" || currentNum === "-") return;
-
-  // Push a recall event to Firebase
-  const recallRef = ref(db, "recallEvents");
-  const newRecall = {
-    table: i,
-    number: currentNum,
-    timestamp: Date.now()
+  /* -------------------- CONFIG -------------------- */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDlGQraZ7m_cdzL2bCxWOb1A165gTwVRKQ",
+    authDomain: "r2tmc-opd-pedia-qs.firebaseapp.com",
+    projectId: "r2tmc-opd-pedia-qs",
+    storageBucket: "r2tmc-opd-pedia-qs.appspot.com",
+    messagingSenderId: "467931438036",
+    appId: "1:467931438036:web:7a15d05ff4a159116e9441",
+    databaseURL: "https://r2tmc-opd-pedia-qs-default-rtdb.asia-southeast1.firebasedatabase.app"
   };
-  push(recallRef, newRecall);
-};
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
+  /* -------------------- STATE -------------------- */
+  const TOTAL_TABLES = 5;
+  const MAX_VITAL_SIGN = 10;
+  let selectedTable = localStorage.getItem("selectedTable") || null;
+  let prefixes = [];
+  let seriesByPrefix = {};
+  let table1DoneNumbers = [];
+  let usedNumbers = new Set();
 
+  /* -------------------- UTIL -------------------- */
+  function toast(msg){
+    const d = document.createElement("div");
+    d.className = "toast";
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 3000);
+  }
+  function stringToColor(str){
+    let hash=0;
+    for(let i=0;i<str.length;i++){ hash=str.charCodeAt(i)+((hash<<5)-hash); }
+    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return "#" + ("00000".substring(0, 6 - c.length) + c);
+  }
 
-/* -------------------- VITAL SIGN LIST -------------------- */
-function renderVitalSignList(num){
-  const list=document.getElementById("vitalSignList"); if(list.querySelector(`#vital-${num}`)) return;
-  const div=document.createElement("div"); div.className="done-number"; div.id=`vital-${num}`;
-  const prefix = num.split("-")[0];
-  const span = document.createElement("span");
-  span.innerHTML = `<span class="prefix-color" style="background:${stringToColor(prefix)}">${prefix}</span> ${num.split("-")[1]}`;
-  const checkBtn = createButton("✅", "#28a745", ()=>{
-    if(document.getElementById("num1").textContent===num){
-      document.getElementById("num1").textContent="-"; set(ref(db,"tableNumbers/table1"),"-"); highlightTable(1);
+  /* -------------------- TABLE SELECTION UI -------------------- */
+  window.confirmTableSelection = function(){
+    const chosen = document.getElementById("tableSelectMenu").value;
+    if(!chosen){ toast("Please select a table."); return; }
+    selectedTable = (chosen === "all") ? "all" : parseInt(chosen);
+    localStorage.setItem("selectedTable", selectedTable);
+    applyTablePermissions();
+    document.getElementById("userMenuOverlay").style.display = "none";
+  };
+  window.changeTable = function(){
+    localStorage.removeItem("selectedTable");
+    document.getElementById("userMenuOverlay").style.display = "flex";
+    closeSettings();
+  };
+  window.addEventListener("load", ()=>{
+    const overlay = document.getElementById("userMenuOverlay");
+    overlay.style.display = "flex";
+    if(selectedTable){
+      const selectMenu = document.getElementById("tableSelectMenu");
+      selectMenu.value = (selectedTable === "all") ? "all" : selectedTable;
     }
-    table1DoneNumbers.push(num); sortTable1DoneNumbers(); renderDoneList(); div.remove(); remove(ref(db,"vitalSignList/"+num));
   });
-  const xBtn = createButton("❌", "#dc3545", ()=>{
-    push(ref(db,"owc"),{table:1,number:num,time:Date.now()}); div.remove();
-    if(document.getElementById("num1").textContent===num){ document.getElementById("num1").textContent="0"; set(ref(db,"tableNumbers/table1"),"0"); }
-    remove(ref(db,"vitalSignList/"+num));
+
+  /* -------------------- RENDER TABLES -------------------- */
+  function renderTables(){
+    let html = "";
+    for(let i=1;i<=TOTAL_TABLES;i++){
+     html += `<div class="table-box" id="tableBox${i}">
+  <h2 style="margin:0">Table ${i}</h2>
+
+  <select id="prefixSelect${i}" class="prefix-dropdown"></select>
+  <div id="num${i}" class="queue-number">0</div>
+
+  <div class="table-buttons">
+
+    ${i !== 1 ? 
+      `<button id="doneBtn${i}" class="common done-btn" onclick="doneQueue(${i})">DONE</button>` 
+      : ""
+    }
+
+    <button id="nextBtn${i}" class="common next-btn" onclick="nextQueue(${i})"
+      ${i !== 1 ? "disabled" : ""}>NEXT</button>
+
+    ${i !== 1 ?
+      `<button class="common owc-btn" onclick="owcQueue(${i})">OWC</button>`
+      : ""
+    }
+
+    <button class="common recall-btn" onclick="recallQueue(${i})">RECALL</button>
+
+  </div>
+</div>`;
+
+    }
+    document.getElementById("tables").innerHTML = html;
+  }
+  renderTables();
+
+  /* -------------------- APPLY TABLE PERMISSIONS -------------------- */
+  function applyTablePermissions(){
+    const vitalContainer = document.getElementById("vitalSignContainer");
+    for(let i=1;i<=TOTAL_TABLES;i++){
+      const box = document.getElementById("tableBox"+i);
+      if(selectedTable === "all" || i === selectedTable) box.style.display = "block";
+      else box.style.display = "none";
+    }
+    if(selectedTable === 1 || selectedTable === "all") vitalContainer.style.display = "block";
+    else vitalContainer.style.display = "none";
+  }
+
+  /* -------------------- PREFIXES (Firebase) -------------------- */
+  onValue(ref(db,"settings/prefixes"), snap=>{
+    prefixes = snap.exists()? snap.val() : [];
+    document.getElementById("prefixInput").value = prefixes.join(",");
+    for(let i=1;i<=TOTAL_TABLES;i++){
+      const sel = document.getElementById("prefixSelect"+i);
+      sel.innerHTML = "";
+      prefixes.forEach(p=>{
+        const o = document.createElement("option");
+        o.value = p;
+        o.textContent = p;
+        sel.appendChild(o);
+      });
+    }
   });
-  const buttonGroup = document.createElement("div"); buttonGroup.style.display="flex"; buttonGroup.style.gap="5px"; buttonGroup.appendChild(checkBtn); buttonGroup.appendChild(xBtn);
-  div.appendChild(span); div.appendChild(buttonGroup); list.appendChild(div);
-}
-
-function addToVitalSignList(num){ renderVitalSignList(num); set(ref(db,"vitalSignList/"+num),{number:num,time:Date.now()}); }
-
-onValue(ref(db,"vitalSignList"),snap=>{
-  document.getElementById("vitalSignList").innerHTML="";
-  if(!snap.exists()) return;
-  Object.values(snap.val()).forEach(v=>renderVitalSignList(v.number));
-});
-
-/* -------------------- DONE LIST -------------------- */
-function renderDoneList(){
-  const box=document.getElementById("doneNumbersList"); box.innerHTML="";
-  const usedInTables=new Set();
-  for(let i=2;i<=TOTAL_TABLES;i++){ const val=document.getElementById("num"+i).textContent; if(val!=="0" && val!=="-") usedInTables.add(val);}
-  table1DoneNumbers.forEach(n=>{ if(!usedInTables.has(n)){ const div=document.createElement("div"); div.className="done-number"; div.textContent=n; box.appendChild(div);} });
-  set(ref(db,"table1DoneNumbers"),table1DoneNumbers);
-}
-
-/* -------------------- OWC LIST -------------------- */
-onValue(ref(db,"owc"),snap=>{
-  const list=document.getElementById("owcList"); list.innerHTML="";
-  if(!snap.exists()) return;
-  Object.entries(snap.val()).sort((a,b)=>a[1].time-b[1].time).forEach(([key,v])=>{
-    const div=document.createElement("div"); div.className="owc-item";
-    const container=document.createElement("div"); container.style.display="flex"; container.style.justifyContent="space-between"; container.style.alignItems="center"; container.style.width="100%";
-    const span=document.createElement("span"); span.textContent=`${v.number} (Table ${v.table})`;
-    const rightControls=document.createElement("div"); rightControls.style.display="flex"; rightControls.style.gap="5px"; rightControls.style.alignItems="center";
-    const tableSelect=document.createElement("select"); tableSelect.style.padding="5px 8px"; tableSelect.style.borderRadius="6px"; tableSelect.style.border="1px solid #ccc"; tableSelect.style.fontWeight="600"; tableSelect.style.fontSize="14px";
-    for(let i=1;i<=TOTAL_TABLES;i++){ const opt=document.createElement("option"); opt.value=i; opt.textContent=`Table ${i}`; tableSelect.appendChild(opt); }
-    tableSelect.value=v.table;
-    const restoreBtn=createButton("✅","#28a745",()=>{
-      const chosenTable=parseInt(tableSelect.value); const numToRestore=v.number;
-      if(chosenTable===1){ const vitalList=document.getElementById("vitalSignList"); if(vitalList.children.length>=MAX_VITAL_SIGN){ toast("Cannot restore: Vital Sign Area full"); return; } addToVitalSignList(numToRestore); set(ref(db,"tableNumbers/table1"),numToRestore); document.getElementById("num1").textContent=numToRestore; }
-      else { const el=document.getElementById("num"+chosenTable); const current=el.textContent; if(current!=="0" && current!=="-"){ toast(`Cannot restore: Table ${chosenTable} already has ${current}`); return; } el.textContent=numToRestore; usedNumbers.add(numToRestore); table1DoneNumbers=table1DoneNumbers.filter(n=>n!==numToRestore); sortTable1DoneNumbers(); set(ref(db,"tableNumbers/table"+chosenTable),numToRestore); renderDoneList(); document.getElementById("nextBtn"+chosenTable).disabled=true; }
-      highlightTable(chosenTable); remove(ref(db,"owc/"+key));
-    },"40px","35px");
-    rightControls.appendChild(tableSelect); rightControls.appendChild(restoreBtn);
-    container.appendChild(span); container.appendChild(rightControls); div.appendChild(container); list.appendChild(div);
+  onValue(ref(db,"prefixSeries"), snap=>{
+    seriesByPrefix = snap.exists()? snap.val() : {};
   });
-});
 
-/* -------------------- SETTINGS -------------------- */
-window.showSettings=()=>{document.getElementById("modalOverlay").style.display="flex";}
-window.closeSettings=()=>{document.getElementById("modalOverlay").style.display="none";}
-window.savePrefix=()=>{ const p=document.getElementById("prefixInput").value.split(",").map(s=>s.trim()).filter(Boolean); set(ref(db,"settings/prefixes"),p); };
-window.resetQueues=()=>{
-  if(!confirm("Reset all queues & OWC?")) return;
-  for(let i=1;i<=TOTAL_TABLES;i++){ document.getElementById("num"+i).textContent="0"; set(ref(db,"tableNumbers/table"+i),"0"); document.getElementById("nextBtn"+i).disabled=i!==1; }
-  document.getElementById("vitalSignList").innerHTML=""; table1DoneNumbers=[]; usedNumbers.clear(); seriesByPrefix={};
-  remove(ref(db,"owc")); remove(ref(db,"vitalSignList")); set(ref(db,"prefixSeries"),{}); renderDoneList();
-};
+  /* -------------------- TABLE NUMBERS (Firebase) -------------------- */
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    onValue(ref(db,"tableNumbers/table"+i), snap=>{
+      if(snap.exists()){
+        const val = snap.val();
+        document.getElementById("num"+i).textContent = val;
+        if(i!==1 && val!=="0" && val!=="-") usedNumbers.add(val);
+      }
+    });
+  }
 
-/* -------------------- UTILITIES -------------------- */
-function createButton(label, bgColor, onClick, size="50px", fontSize="20px"){
-  const btn=document.createElement("button"); btn.textContent=label; btn.style.width=size; btn.style.height=size; btn.style.fontSize=fontSize; btn.style.background=bgColor; btn.style.color="white"; btn.style.borderRadius="6px"; btn.style.border="none"; btn.style.cursor="pointer"; btn.onclick=onClick; return btn;
-}
-function highlightTable(i){ const box=document.getElementById("tableBox"+i); box.classList.add("highlight"); setTimeout(()=>box.classList.remove("highlight"),1000);}
+  /* -------------------- TABLE1 DONE NUMBERS (Firebase) -------------------- */
+  onValue(ref(db,"table1DoneNumbers"), snap=>{
+    table1DoneNumbers = snap.exists()? snap.val() : [];
+    renderDoneList();
+  });
+
+  /* -------------------- NEXT / DONE / OWC / RECALL LOGIC -------------------- */
+  function sortTable1DoneNumbers(){
+    table1DoneNumbers.sort((a,b)=>{
+      const [pA,nA] = a.split("-");
+      const [pB,nB] = b.split("-");
+      if(pA !== pB) return prefixes.indexOf(pA) - prefixes.indexOf(pB);
+      return parseInt(nA,10) - parseInt(nB,10);
+    });
+  }
+  function getNextAvailableNumber(prefix){
+    // Always take the first matching prefix in the sorted done list
+    if(!table1DoneNumbers || table1DoneNumbers.length === 0) return null;
+    return table1DoneNumbers.find(n => n.startsWith(prefix)) || null;
+  }
+
+  window.nextQueue = function(i){
+    const prefix = document.getElementById("prefixSelect"+i).value;
+    if(!prefix){ toast("Select a prefix"); return; }
+
+    if(i === 1){
+      const list = document.getElementById("vitalSignList");
+      if(list.children.length >= MAX_VITAL_SIGN){ toast("Vital Sign List max "+MAX_VITAL_SIGN+"!"); return; }
+      if(!seriesByPrefix[prefix]) seriesByPrefix[prefix] = 0;
+      seriesByPrefix[prefix]++;
+      const newNum = `${prefix}-${String(seriesByPrefix[prefix]).padStart(3,"0")}`;
+      document.getElementById("num1").textContent = newNum;
+      addToVitalSignList(newNum);
+      set(ref(db,"tableNumbers/table1"), newNum);
+      set(ref(db,"prefixSeries"), seriesByPrefix);
+      highlightTable(1);
+      return;
+    }
+
+    const nextNum = getNextAvailableNumber(prefix);
+    if(!nextNum){ toast("No available number for "+prefix); return; }
+    const el = document.getElementById("num"+i);
+    el.textContent = nextNum;
+    usedNumbers.add(nextNum);
+    table1DoneNumbers = table1DoneNumbers.filter(n => n !== nextNum);
+    sortTable1DoneNumbers();
+    set(ref(db,"tableNumbers/table"+i), nextNum);
+    renderDoneList();
+    document.getElementById("nextBtn"+i).disabled = true;
+    highlightTable(i);
+  };
+
+  window.doneQueue = function(i){
+    const el = document.getElementById("num"+i);
+    const num = el.textContent;
+    if(num && num !== "0" && num !== "-"){
+      if(i === 1){
+        table1DoneNumbers.push(num);
+        sortTable1DoneNumbers();
+        renderDoneList();
+      }
+    }
+    el.textContent = "-";
+    set(ref(db,"tableNumbers/table"+i), "-");
+    if(document.getElementById("nextBtn"+i)) document.getElementById("nextBtn"+i).disabled = false;
+    highlightTable(i);
+  };
+
+  window.owcQueue = function(i){
+    const el = document.getElementById("num"+i);
+    const num = el.textContent;
+    if(!num || num === "0" || num === "-") return;
+    push(ref(db,"owc"), {table:i, number:num, time:Date.now()});
+    el.textContent = "0";
+    if(document.getElementById("nextBtn"+i)) document.getElementById("nextBtn"+i).disabled = false;
+  };
+
+  window.recallQueue = function(i){
+    const tableBox = document.getElementById("tableBox"+i);
+    if(!tableBox) return;
+    tableBox.classList.add("pulse");
+    setTimeout(()=>tableBox.classList.remove("pulse"), 1000);
+    const currentNum = document.getElementById("num"+i).textContent;
+    if(!currentNum || currentNum === "0" || currentNum === "-") return;
+    const recallRef = ref(db,"recallEvents");
+    const newRecall = {table:i, number:currentNum, timestamp:Date.now()};
+    push(recallRef, newRecall);
+  };
+
+  /* -------------------- VITAL SIGN LIST -------------------- */
+  function renderVitalSignList(num){
+    const list = document.getElementById("vitalSignList");
+    if(list.querySelector(`#vital-${num}`)) return;
+
+    const div = document.createElement("div");
+    div.className = "done-number";
+    div.id = `vital-${num}`;
+
+    const prefix = num.split("-")[0];
+    const left = document.createElement("div");
+    left.style.display = "flex";
+    left.style.alignItems = "center";
+    left.style.gap = "8px";
+    const colorSpan = document.createElement("span");
+    colorSpan.className = "prefix-color";
+    colorSpan.style.background = stringToColor(prefix);
+    colorSpan.textContent = prefix;
+    const textSpan = document.createElement("span");
+    textSpan.textContent = num.split("-")[1];
+
+    left.appendChild(colorSpan);
+    left.appendChild(textSpan);
+
+    const buttonGroup = document.createElement("div");
+    buttonGroup.style.display = "flex";
+    buttonGroup.style.gap = "6px";
+    buttonGroup.style.alignItems = "center";
+
+    const checkBtn = document.createElement("button");
+    checkBtn.className = "list-action-btn";
+    checkBtn.style.background = "var(--success)";
+    checkBtn.style.color = "#fff";
+    checkBtn.textContent = "✅";
+    checkBtn.title = "Mark as Done / Move to Done list";
+    checkBtn.onclick = ()=>{
+      // if number currently in num1, clear it
+      if(document.getElementById("num1").textContent === num){
+        document.getElementById("num1").textContent = "-";
+        set(ref(db,"tableNumbers/table1"), "-");
+        highlightTable(1);
+      }
+      table1DoneNumbers.push(num);
+      sortTable1DoneNumbers();
+      renderDoneList();
+      div.remove();
+      remove(ref(db,"vitalSignList/"+num));
+    };
+
+    const xBtn = document.createElement("button");
+    xBtn.className = "list-action-btn";
+    xBtn.style.background = "var(--danger)";
+    xBtn.style.color = "#fff";
+    xBtn.textContent = "❌";
+    xBtn.title = "Move to OWC";
+    xBtn.onclick = ()=>{
+      push(ref(db,"owc"), {table:1, number:num, time:Date.now()});
+      div.remove();
+      if(document.getElementById("num1").textContent === num){
+        document.getElementById("num1").textContent = "0";
+        set(ref(db,"tableNumbers/table1"), "0");
+      }
+      remove(ref(db,"vitalSignList/"+num));
+    };
+
+    buttonGroup.appendChild(checkBtn);
+    buttonGroup.appendChild(xBtn);
+
+    div.appendChild(left);
+    div.appendChild(buttonGroup);
+    list.appendChild(div);
+  }
+
+  function addToVitalSignList(num){
+    renderVitalSignList(num);
+    set(ref(db,"vitalSignList/"+num), {number:num, time:Date.now()});
+  }
+
+  onValue(ref(db,"vitalSignList"), snap=>{
+    const list = document.getElementById("vitalSignList");
+    list.innerHTML = "";
+    if(!snap.exists()) return;
+    // ensure newest order by time or alphabetical? we use stored object values
+    Object.values(snap.val()).forEach(v => renderVitalSignList(v.number));
+  });
+
+  /* -------------------- DONE LIST -------------------- */
+  function renderDoneList(){
+    const box = document.getElementById("doneNumbersList");
+    box.innerHTML = "";
+    const usedInTables = new Set();
+    for(let i=2;i<=TOTAL_TABLES;i++){ const val=document.getElementById("num"+i).textContent; if(val!=="0" && val!=="-") usedInTables.add(val); }
+
+    table1DoneNumbers.forEach(n=>{
+      if(!usedInTables.has(n)){
+        const div = document.createElement("div");
+        div.className = "done-number";
+        div.textContent = n;
+        box.appendChild(div);
+      }
+    });
+    set(ref(db,"table1DoneNumbers"), table1DoneNumbers);
+  }
+
+  /* -------------------- OWC LIST -------------------- */
+  onValue(ref(db,"owc"), snap=>{
+    const list = document.getElementById("owcList");
+    list.innerHTML = "";
+    if(!snap.exists()) return;
+    // sort by time ascending
+    Object.entries(snap.val()).sort((a,b)=>a[1].time-b[1].time).forEach(([key,v])=>{
+      const div = document.createElement("div");
+      div.className = "owc-item";
+
+      const left = document.createElement("div");
+      left.textContent = `${v.number} (Table ${v.table})`;
+
+      const rightControls = document.createElement("div");
+      rightControls.style.display = "flex";
+      rightControls.style.gap = "6px";
+      rightControls.style.alignItems = "center";
+
+      const tableSelect = document.createElement("select");
+      tableSelect.className = "restore-select";
+      for(let i=1;i<=TOTAL_TABLES;i++){ const opt = document.createElement("option"); opt.value=i; opt.textContent=`Table ${i}`; tableSelect.appendChild(opt); }
+      tableSelect.value = v.table;
+
+      const restoreBtn = document.createElement("button");
+      restoreBtn.className = "list-action-btn";
+      restoreBtn.style.background = "var(--success)";
+      restoreBtn.style.color = "#fff";
+      restoreBtn.textContent = "✅";
+      restoreBtn.title = "Restore to selected table";
+      restoreBtn.onclick = ()=>{
+        const chosenTable = parseInt(tableSelect.value);
+        const numToRestore = v.number;
+        if(chosenTable === 1){
+          const vitalList = document.getElementById("vitalSignList");
+          if(vitalList.children.length >= MAX_VITAL_SIGN){ toast("Cannot restore: Vital Sign Area full"); return; }
+          addToVitalSignList(numToRestore);
+          set(ref(db,"tableNumbers/table1"), numToRestore);
+          document.getElementById("num1").textContent = numToRestore;
+        } else {
+          const el = document.getElementById("num"+chosenTable);
+          const current = el.textContent;
+          if(current !== "0" && current !== "-"){ toast(`Cannot restore: Table ${chosenTable} already has ${current}`); return; }
+          el.textContent = numToRestore;
+          usedNumbers.add(numToRestore);
+          table1DoneNumbers = table1DoneNumbers.filter(n=>n!==numToRestore);
+          sortTable1DoneNumbers();
+          set(ref(db,"tableNumbers/table"+chosenTable), numToRestore);
+          renderDoneList();
+          const nextBtn = document.getElementById("nextBtn"+chosenTable);
+          if(nextBtn) nextBtn.disabled = true;
+        }
+        highlightTable(chosenTable);
+        remove(ref(db,"owc/"+key));
+      };
+
+      rightControls.appendChild(tableSelect);
+      rightControls.appendChild(restoreBtn);
+
+      div.appendChild(left);
+      div.appendChild(rightControls);
+      list.appendChild(div);
+    });
+  });
+
+  /* -------------------- SETTINGS -------------------- */
+  window.showSettings = ()=>{ document.getElementById("modalOverlay").style.display = "flex"; }
+  window.closeSettings = ()=>{ document.getElementById("modalOverlay").style.display = "none"; }
+  window.savePrefix = ()=>{ const p = document.getElementById("prefixInput").value.split(",").map(s=>s.trim()).filter(Boolean); set(ref(db,"settings/prefixes"), p); toast("Prefixes saved"); }
+  window.resetQueues = ()=>{
+    if(!confirm("Reset all queues & OWC?")) return;
+    for(let i=1;i<=TOTAL_TABLES;i++){ document.getElementById("num"+i).textContent = "0"; set(ref(db,"tableNumbers/table"+i), "0"); const nextBtn=document.getElementById("nextBtn"+i); if(nextBtn) nextBtn.disabled = (i!==1); }
+    document.getElementById("vitalSignList").innerHTML = "";
+    table1DoneNumbers = [];
+    usedNumbers.clear();
+    seriesByPrefix = {};
+    remove(ref(db,"owc"));
+    remove(ref(db,"vitalSignList"));
+    set(ref(db,"prefixSeries"), {});
+    renderDoneList();
+    toast("Queues reset");
+  };
+
+  /* -------------------- UTILITIES -------------------- */
+  function createButton(label, bgColor, onClick, width="40px", height="35px"){
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.style.width = width;
+    btn.style.height = height;
+    btn.style.background = bgColor;
+    btn.style.color = "#fff";
+    btn.style.borderRadius = "6px";
+    btn.style.border = "none";
+    btn.style.cursor = "pointer";
+    btn.onclick = onClick;
+    return btn;
+  }
+  function highlightTable(i){ const box = document.getElementById("tableBox"+i); if(!box) return; box.classList.add("highlight"); setTimeout(()=>box.classList.remove("highlight"), 1000); }
+
+  /* -------------------- COLLAPSIBLE TOGGLERS -------------------- */
+  // we'll persist collapsed state in localStorage so UI remains consistent on reload
+  const COLLAPSE_KEYS = {
+    owc: "collapsed_owc",
+    vital: "collapsed_vital",
+    done: "collapsed_done"
+  };
+
+  function setCollapsedUI(key, collapsed){
+    const map = {
+      owc: {content: "owcContent", btn: "owcToggleBtn", label: "owcToggleLabel"},
+      vital: {content: "vitalContent", btn: "vitalToggleBtn", label: "vitalToggleLabel"},
+      done: {content: "doneContent", btn: "doneToggleBtn", label: "doneToggleLabel"}
+    }[key];
+    if(!map) return;
+    const content = document.getElementById(map.content);
+    const btn = document.getElementById(map.btn);
+    const label = document.getElementById(map.label);
+    if(collapsed){
+      content.classList.add("collapsed");
+      btn.classList.add("collapsed");
+      btn.setAttribute("aria-expanded","false");
+      label.textContent = "Show";
+    } else {
+      content.classList.remove("collapsed");
+      btn.classList.remove("collapsed");
+      btn.setAttribute("aria-expanded","true");
+      label.textContent = "Hide";
+    }
+    localStorage.setItem(COLLAPSE_KEYS[key], collapsed ? "1" : "0");
+  }
+
+  window.toggleOWC = function(){
+    const key = "owc";
+    const cur = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
+    setCollapsedUI(key, !cur);
+  };
+  window.toggleVital = function(){
+    const key = "vital";
+    const cur = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
+    setCollapsedUI(key, !cur);
+  };
+  window.toggleDone = function(){
+    const key = "done";
+    const cur = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
+    setCollapsedUI(key, !cur);
+  };
+
+  // initialize collapsible states on load
+  (function initCollapsibles(){
+    const defaultStates = { owc:false, vital:false, done:false }; // default to expanded
+    Object.keys(defaultStates).forEach(k=>{
+      const v = localStorage.getItem(COLLAPSE_KEYS[k]);
+      const collapsed = v === null ? defaultStates[k] : (v === "1");
+      setCollapsedUI(k, collapsed);
+    });
+  })();
+
+  /* -------------------- END -------------------- */
 </script>
 </body>
 </html>
