@@ -119,18 +119,30 @@
   font-weight: 800;
   border-radius: 12px;
 }
-/* Vital Sign List & Done Numbers List styling */
-#vitalSignList, #doneNumbersList {
+/* Vital Sign List & Done Numbers List CARD INCLUDING TITLE */
+#vitalSignContainer .card,
+#doneContainer .card {
   background: var(--card-bg);  /* white background */
-  border-radius: 14px;         /* rounded corners */
-  box-shadow: var(--shadow);   /* shadow to match tables */
-  padding: 12px;               /* inner padding */
+  border-radius: 14px;         /* rounded corners like tables */
+  box-shadow: var(--shadow);   /* matching shadow */
+  padding: 16px;               /* inner padding */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;                   /* space between title and list */
+}
+
+/* Inner lists */
+#vitalSignList, #doneNumbersList {
+  background: var(--card-bg);  /* white background to match card */
+  border-radius: 12px;         /* slightly smaller radius for inner list */
+  box-shadow: var(--shadow);   /* subtle inner shadow if needed */
+  padding: 12px;               /* spacing inside the list */
   max-height: 500px;
   overflow-y: auto;
   display: grid;
   gap: 10px;
-  margin-top: 8px;             /* already used, keep it */
 }
+
 
 /* Vital Sign List items */
 #vitalSignList .done-number {
