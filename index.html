@@ -649,68 +649,92 @@ window.toggleHeader = function() {
   }
 
   /* -------------------- OWC LIST -------------------- */
-  onValue(ref(db,"owc"), snap=>{
-    const list = document.getElementById("owcList");
-    list.innerHTML = "";
-    if(!snap.exists()) return;
-    // sort by time ascending
-    Object.entries(snap.val()).sort((a,b)=>a[1].time-b[1].time).forEach(([key,v])=>{
-      const div = document.createElement("div");
-      div.className = "owc-item";
+  onValue(ref(db,"owc"), snap => {
+  const list = document.getElementById("owcList");
+  list.innerHTML = "";
+  if (!snap.exists()) return;
 
-      const left = document.createElement("div");
-      left.textContent = `${v.number} (Table ${v.table})`;
+  // Convert object to array
+  const owcArray = Object.entries(snap.val());
 
-      const rightControls = document.createElement("div");
-      rightControls.style.display = "flex";
-      rightControls.style.gap = "6px";
-      rightControls.style.alignItems = "center";
-
-      const tableSelect = document.createElement("select");
-      tableSelect.className = "restore-select";
-      for(let i=1;i<=TOTAL_TABLES;i++){ const opt = document.createElement("option"); opt.value=i; opt.textContent=`Table ${i}`; tableSelect.appendChild(opt); }
-      tableSelect.value = v.table;
-
-      const restoreBtn = document.createElement("button");
-      restoreBtn.className = "list-action-btn";
-      restoreBtn.style.background = "var(--success)";
-      restoreBtn.style.color = "#fff";
-      restoreBtn.textContent = "✅";
-      restoreBtn.title = "Restore to selected table";
-      restoreBtn.onclick = ()=>{
-        const chosenTable = parseInt(tableSelect.value);
-        const numToRestore = v.number;
-        if(chosenTable === 1){
-          const vitalList = document.getElementById("vitalSignList");
-          if(vitalList.children.length >= MAX_VITAL_SIGN){ toast("Cannot restore: Vital Sign Area full"); return; }
-          addToVitalSignList(numToRestore);
-          set(ref(db,"tableNumbers/table1"), numToRestore);
-          document.getElementById("num1").textContent = numToRestore;
-        } else {
-          const el = document.getElementById("num"+chosenTable);
-          const current = el.textContent;
-          if(current !== "0" && current !== "-"){ toast(`Cannot restore: Table ${chosenTable} already has ${current}`); return; }
-          el.textContent = numToRestore;
-          usedNumbers.add(numToRestore);
-          table1DoneNumbers = table1DoneNumbers.filter(n=>n!==numToRestore);
-          sortTable1DoneNumbers();
-          set(ref(db,"tableNumbers/table"+chosenTable), numToRestore);
-          renderDoneList();
-          const nextBtn = document.getElementById("nextBtn"+chosenTable);
-          if(nextBtn) nextBtn.disabled = true;
-        }
-        highlightTable(chosenTable);
-        remove(ref(db,"owc/"+key));
-      };
-
-      rightControls.appendChild(tableSelect);
-      rightControls.appendChild(restoreBtn);
-
-      div.appendChild(left);
-      div.appendChild(rightControls);
-      list.appendChild(div);
-    });
+  // Sort by prefix alphabetically, then numeric part numerically
+  owcArray.sort((a, b) => {
+    const [prefixA, numA] = a[1].number.split("-");
+    const [prefixB, numB] = b[1].number.split("-");
+    if (prefixA !== prefixB) return prefixA.localeCompare(prefixB);
+    return parseInt(numA, 10) - parseInt(numB, 10);
   });
+
+  owcArray.forEach(([key, v]) => {
+    const div = document.createElement("div");
+    div.className = "owc-item";
+
+    const left = document.createElement("div");
+    left.textContent = `${v.number} (Table ${v.table})`;
+
+    const rightControls = document.createElement("div");
+    rightControls.style.display = "flex";
+    rightControls.style.gap = "6px";
+    rightControls.style.alignItems = "center";
+
+    const tableSelect = document.createElement("select");
+    tableSelect.className = "restore-select";
+    for (let i = 1; i <= TOTAL_TABLES; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `Table ${i}`;
+      tableSelect.appendChild(opt);
+    }
+    tableSelect.value = v.table;
+
+    const restoreBtn = document.createElement("button");
+    restoreBtn.className = "list-action-btn";
+    restoreBtn.style.background = "var(--success)";
+    restoreBtn.style.color = "#fff";
+    restoreBtn.textContent = "✅";
+    restoreBtn.title = "Restore to selected table";
+    restoreBtn.onclick = () => {
+      const chosenTable = parseInt(tableSelect.value);
+      const numToRestore = v.number;
+
+      if (chosenTable === 1) {
+        const vitalList = document.getElementById("vitalSignList");
+        if (vitalList.children.length >= MAX_VITAL_SIGN) {
+          toast("Cannot restore: Vital Sign Area full");
+          return;
+        }
+        addToVitalSignList(numToRestore);
+        set(ref(db,"tableNumbers/table1"), numToRestore);
+        document.getElementById("num1").textContent = numToRestore;
+      } else {
+        const el = document.getElementById("num" + chosenTable);
+        const current = el.textContent;
+        if (current !== "0" && current !== "-") {
+          toast(`Cannot restore: Table ${chosenTable} already has ${current}`);
+          return;
+        }
+        el.textContent = numToRestore;
+        usedNumbers.add(numToRestore);
+        table1DoneNumbers = table1DoneNumbers.filter(n => n !== numToRestore);
+        sortTable1DoneNumbers();
+        set(ref(db,"tableNumbers/table" + chosenTable), numToRestore);
+        renderDoneList();
+        const nextBtn = document.getElementById("nextBtn" + chosenTable);
+        if (nextBtn) nextBtn.disabled = true;
+      }
+      highlightTable(chosenTable);
+      remove(ref(db,"owc/" + key));
+    };
+
+    rightControls.appendChild(tableSelect);
+    rightControls.appendChild(restoreBtn);
+
+    div.appendChild(left);
+    div.appendChild(rightControls);
+    list.appendChild(div);
+  });
+});
+
 
   /* -------------------- SETTINGS -------------------- */
   window.showSettings = ()=>{ document.getElementById("modalOverlay").style.display = "flex"; }
