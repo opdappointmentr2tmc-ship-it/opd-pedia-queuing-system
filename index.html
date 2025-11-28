@@ -119,6 +119,19 @@
   font-weight: 800;
   border-radius: 12px;
 }
+/* Vital Sign List & Done Numbers List styling */
+#vitalSignList, #doneNumbersList {
+  background: var(--card-bg);  /* white background */
+  border-radius: 14px;         /* rounded corners */
+  box-shadow: var(--shadow);   /* shadow to match tables */
+  padding: 12px;               /* inner padding */
+  max-height: 500px;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;             /* already used, keep it */
+}
+
 /* Vital Sign List items */
 #vitalSignList .done-number {
   display: flex;
