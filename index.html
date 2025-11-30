@@ -237,6 +237,14 @@ button.common:not(:disabled):hover {
   animation: pulseRestore 0.8s ease-in-out;
 }
 
+/* SETTINGS MODAL BUTTON TEXT COLOR */
+#modalBox button {
+  color: #fff !important;
+}
+
+#modalBox button:hover {
+  opacity: 0.9;
+}
 
 </style>
 </head>
@@ -433,7 +441,8 @@ button.common:not(:disabled):hover {
       : ""
     }
 
-    <button class="common recall-btn" onclick="recallQueue(${i})">RECALL</button>
+${i !== 1 ? `<button class="common recall-btn" onclick="recallQueue(${i})">RECALL</button>` : ""}
+
 
   </div>
 </div>`;
@@ -642,6 +651,20 @@ function updateTableButtons(i){
   }
 }
 
+// Initialize buttons state for all tables
+for(let i=1; i<=TOTAL_TABLES; i++){
+  updateTableButtons(i);
+}
+
+for(let i=1;i<=TOTAL_TABLES;i++){
+  document.getElementById("num"+i).textContent = "0";
+  set(ref(db,"tableNumbers/table"+i), "0");
+  const nextBtn = document.getElementById("nextBtn"+i);
+  if(nextBtn) nextBtn.disabled = (i!==1);
+
+  // Update OWC & Recall buttons
+  updateTableButtons(i);
+}
 
 
   /* -------------------- VITAL SIGN LIST -------------------- */
@@ -709,8 +732,31 @@ function updateTableButtons(i){
       remove(ref(db,"vitalSignList/"+num));
     };
 
+const recallBtn = document.createElement("button");
+recallBtn.className = "list-action-btn";
+recallBtn.style.background = "var(--recall)";
+recallBtn.style.color = "#fff";
+recallBtn.textContent = "🔔"; // or "RECALL"
+recallBtn.title = "Recall this number";
+recallBtn.onclick = ()=>{
+  // Visual pulse effect for Table 1
+  const tableBox = document.getElementById("tableBox1");
+  if(tableBox){
+    tableBox.classList.add("pulse");
+    setTimeout(()=>tableBox.classList.remove("pulse"),1000);
+  }
+
+  // Log recall event to Firebase
+  const recallRef = ref(db,"recallEvents");
+  const newRecall = {table:1, number:num, timestamp:Date.now()};
+  push(recallRef, newRecall);
+
+  toast(`Recalled ${num}`);
+};
+
     buttonGroup.appendChild(checkBtn);
     buttonGroup.appendChild(xBtn);
+buttonGroup.appendChild(recallBtn);
 
     div.appendChild(left);
     div.appendChild(buttonGroup);
