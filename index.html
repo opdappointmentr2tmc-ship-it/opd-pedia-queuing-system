@@ -39,7 +39,22 @@
   button.common{padding:10px;border-radius:10px;border:none;font-weight:700;color:#fff;cursor:pointer}
   .next-btn{background:var(--primary)}
   .done-btn{background:var(--done)}
-  .owc-btn{background:var(--owc);color:#222}
+  .owc-btn{background: var(--danger); /* Red color */
+  color: #fff;
+}
+button.common:disabled {
+  background: #ccc !important;    /* Gray background */
+  color: #666 !important;         /* Darker gray text */
+  cursor: not-allowed;            /* Change cursor to not-allowed */
+  opacity: 0.7;                   /* Slightly faded */
+  box-shadow: none;               /* Remove shadow when disabled */
+  transform: none;                /* Remove any hover/active effect */
+}
+button.common:not(:disabled):hover {
+  transform: scale(1.03);         /* Slight zoom on hover for enabled buttons */
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
   .recall-btn{background:var(--recall)}
   .small-btn{padding:6px 10px;border-radius:8px;font-weight:700}
 
@@ -119,6 +134,7 @@
   font-weight: 800;
   border-radius: 12px;
 }
+
 /* Vital Sign List & Done Numbers List CARD INCLUDING TITLE */
 #vitalSignContainer .card,
 #doneContainer .card {
@@ -143,26 +159,32 @@
   gap: 10px;
 }
 
-
-/* Vital Sign List items */
-#vitalSignList .done-number {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 900;
-  word-break: break-word;  /* wrap long text */
-  overflow: hidden;        /* prevent overflow */
-}
-
-#vitalSignList .done-number div {
+#vitalSignList .done-number > div:first-child {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;        /* wrap prefix + number to next line if needed */
+  flex-shrink: 1;
+  min-width: 0; /* critical */
 }
+
+#vitalSignList .done-number > div:first-child span.prefix-color {
+  flex-shrink: 0; /* prefix never shrinks */
+}
+
+#vitalSignList .done-number > div:first-child span:last-child {
+  flex: 1 1 auto;   /* take remaining space */
+  min-width: 0;     /* allow shrinking properly */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#vitalSignList .done-number div:last-child {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;   /* buttons never shrink */
+}
+
+
 
 .prefix-color {
   flex-shrink: 0;         /* prevent shrinking */
@@ -191,6 +213,28 @@
   padding-top: 0;
   padding-bottom: 0;
   opacity: 0;
+}
+
+/* Table pulse for OWC (red) */
+@keyframes pulseOWCTable {
+  0% { box-shadow: 0 0 8px rgba(220,53,69,0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 25px rgba(220,53,69,0.95); transform: scale(1.03); }
+  100% { box-shadow: 0 0 8px rgba(220,53,69,0.8); transform: scale(1); }
+}
+
+.table-box.pulse-owc {
+  animation: pulseOWCTable 0.8s ease-in-out;
+}
+
+/* Table pulse for restore (yellow) */
+@keyframes pulseRestore {
+  0% { box-shadow: 0 0 8px rgba(255,193,7,0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 25px rgba(255,193,7,0.95); transform: scale(1.03); }
+  100% { box-shadow: 0 0 8px rgba(255,193,7,0.8); transform: scale(1); }
+}
+
+.table-box.pulse-restore {
+  animation: pulseRestore 0.8s ease-in-out;
 }
 
 
@@ -477,72 +521,128 @@ window.toggleHeader = function() {
   }
 
   window.nextQueue = function(i){
-    const prefix = document.getElementById("prefixSelect"+i).value;
-    if(!prefix){ toast("Select a prefix"); return; }
+  const prefix = document.getElementById("prefixSelect"+i).value;
+  if(!prefix){ toast("Select a prefix"); return; }
 
+  const nextBtn = document.getElementById("nextBtn"+i);
+
+  if(i === 1){
+    const list = document.getElementById("vitalSignList");
+    if(list.children.length >= MAX_VITAL_SIGN){ toast("Vital Sign List max "+MAX_VITAL_SIGN+"!"); return; }
+    if(!seriesByPrefix[prefix]) seriesByPrefix[prefix] = 0;
+    seriesByPrefix[prefix]++;
+    const newNum = `${prefix}-${String(seriesByPrefix[prefix]).padStart(3,"0")}`;
+    document.getElementById("num1").textContent = newNum;
+    addToVitalSignList(newNum);
+    set(ref(db,"tableNumbers/table1"), newNum);
+    set(ref(db,"prefixSeries"), seriesByPrefix);
+    highlightTable(1);
+    return;
+  }
+
+  const nextNum = getNextAvailableNumber(prefix);
+  if(!nextNum){ toast("No available number for "+prefix); return; }
+
+  const el = document.getElementById("num"+i);
+  el.textContent = nextNum;
+  usedNumbers.add(nextNum);
+  table1DoneNumbers = table1DoneNumbers.filter(n => n !== nextNum);
+  sortTable1DoneNumbers();
+  set(ref(db,"tableNumbers/table"+i), nextNum);
+  renderDoneList();
+
+  // ✅ Only disable NEXT until Done is pressed
+  if(nextBtn) nextBtn.disabled = true;
+updateTableButtons(i);
+  highlightTable(i);
+};
+
+window.doneQueue = function(i){
+  const el = document.getElementById("num"+i);
+  const num = el.textContent;
+  if(num && num !== "0" && num !== "-"){
     if(i === 1){
-      const list = document.getElementById("vitalSignList");
-      if(list.children.length >= MAX_VITAL_SIGN){ toast("Vital Sign List max "+MAX_VITAL_SIGN+"!"); return; }
-      if(!seriesByPrefix[prefix]) seriesByPrefix[prefix] = 0;
-      seriesByPrefix[prefix]++;
-      const newNum = `${prefix}-${String(seriesByPrefix[prefix]).padStart(3,"0")}`;
-      document.getElementById("num1").textContent = newNum;
-      addToVitalSignList(newNum);
-      set(ref(db,"tableNumbers/table1"), newNum);
-      set(ref(db,"prefixSeries"), seriesByPrefix);
-      highlightTable(1);
-      return;
+      table1DoneNumbers.push(num);
+      sortTable1DoneNumbers();
+      renderDoneList();
     }
+  }
+  el.textContent = "-";
+  set(ref(db,"tableNumbers/table"+i), "-");
 
-    const nextNum = getNextAvailableNumber(prefix);
-    if(!nextNum){ toast("No available number for "+prefix); return; }
-    const el = document.getElementById("num"+i);
-    el.textContent = nextNum;
-    usedNumbers.add(nextNum);
-    table1DoneNumbers = table1DoneNumbers.filter(n => n !== nextNum);
-    sortTable1DoneNumbers();
-    set(ref(db,"tableNumbers/table"+i), nextNum);
-    renderDoneList();
-    document.getElementById("nextBtn"+i).disabled = true;
-    highlightTable(i);
-  };
+  const nextBtn = document.getElementById("nextBtn"+i);
+  if(nextBtn) nextBtn.disabled = false;  // enable NEXT
+  // ✅ Do NOT disable Recall
+updateTableButtons(i);
+  highlightTable(i);
+};
 
-  window.doneQueue = function(i){
-    const el = document.getElementById("num"+i);
-    const num = el.textContent;
-    if(num && num !== "0" && num !== "-"){
-      if(i === 1){
-        table1DoneNumbers.push(num);
-        sortTable1DoneNumbers();
-        renderDoneList();
-      }
-    }
-    el.textContent = "-";
-    set(ref(db,"tableNumbers/table"+i), "-");
-    if(document.getElementById("nextBtn"+i)) document.getElementById("nextBtn"+i).disabled = false;
-    highlightTable(i);
-  };
+window.owcQueue = function(i) {
+  const el = document.getElementById("num" + i);
+  const num = el.textContent;
+  if (!num || num === "0" || num === "-") return;
 
-  window.owcQueue = function(i){
-    const el = document.getElementById("num"+i);
-    const num = el.textContent;
-    if(!num || num === "0" || num === "-") return;
-    push(ref(db,"owc"), {table:i, number:num, time:Date.now()});
-    el.textContent = "0";
-    if(document.getElementById("nextBtn"+i)) document.getElementById("nextBtn"+i).disabled = false;
-  };
+  // Pulse red for OWC
+  pulseTable(i, "red");
+
+  // Push to Firebase OWC
+  push(ref(db, "owc"), { table: i, number: num, time: Date.now() });
+
+  // Clear the table number
+  el.textContent = "-";
+
+  const nextBtn = document.getElementById("nextBtn" + i);
+  if (nextBtn) nextBtn.disabled = false;
+
+  updateTableButtons(i);
+};
+
+
 
   window.recallQueue = function(i){
-    const tableBox = document.getElementById("tableBox"+i);
-    if(!tableBox) return;
-    tableBox.classList.add("pulse");
-    setTimeout(()=>tableBox.classList.remove("pulse"), 1000);
-    const currentNum = document.getElementById("num"+i).textContent;
-    if(!currentNum || currentNum === "0" || currentNum === "-") return;
-    const recallRef = ref(db,"recallEvents");
-    const newRecall = {table:i, number:currentNum, timestamp:Date.now()};
-    push(recallRef, newRecall);
-  };
+  const el = document.getElementById("num"+i);
+  const currentNum = el?.textContent;
+
+  // ✅ Prevent recall if number is 0, -, or empty
+  if(!currentNum || currentNum === "0" || currentNum === "-") return;
+
+  const tableBox = document.getElementById("tableBox"+i);
+  if(!tableBox) return;
+
+  // Visual pulse effect
+  tableBox.classList.add("pulse");
+  setTimeout(()=>tableBox.classList.remove("pulse"), 1000);
+
+  // Log recall event to Firebase
+  const recallRef = ref(db,"recallEvents");
+  const newRecall = {table:i, number:currentNum, timestamp:Date.now()};
+  push(recallRef, newRecall);
+};
+
+function updateTableButtons(i){
+  const el = document.getElementById("num"+i);
+  if(!el) return;
+
+  const num = el.textContent;
+  const recallBtn = document.querySelector(`#tableBox${i} .recall-btn`);
+  const owcBtn = document.querySelector(`#tableBox${i} .owc-btn`);
+  const nextBtn = document.getElementById("nextBtn"+i);
+
+  if(num === "0" || num === "-" || !num){
+    if(recallBtn) recallBtn.disabled = true;
+    if(owcBtn) owcBtn.disabled = true;
+  } else {
+    if(recallBtn) recallBtn.disabled = false;
+    if(owcBtn) owcBtn.disabled = false;
+  }
+
+  // NEXT button is only disabled for tables != 1 after taking a number
+  if(i !== 1 && nextBtn){
+    nextBtn.disabled = (num !== "0" && num !== "-");
+  }
+}
+
+
 
   /* -------------------- VITAL SIGN LIST -------------------- */
   function renderVitalSignList(num){
@@ -694,37 +794,47 @@ window.toggleHeader = function() {
     restoreBtn.textContent = "✅";
     restoreBtn.title = "Restore to selected table";
     restoreBtn.onclick = () => {
-      const chosenTable = parseInt(tableSelect.value);
-      const numToRestore = v.number;
+  const chosenTable = parseInt(tableSelect.value);
+  const numToRestore = v.number;
+  const tableBox = document.getElementById("tableBox" + chosenTable);
 
-      if (chosenTable === 1) {
-        const vitalList = document.getElementById("vitalSignList");
-        if (vitalList.children.length >= MAX_VITAL_SIGN) {
-          toast("Cannot restore: Vital Sign Area full");
-          return;
-        }
-        addToVitalSignList(numToRestore);
-        set(ref(db,"tableNumbers/table1"), numToRestore);
-        document.getElementById("num1").textContent = numToRestore;
-      } else {
-        const el = document.getElementById("num" + chosenTable);
-        const current = el.textContent;
-        if (current !== "0" && current !== "-") {
-          toast(`Cannot restore: Table ${chosenTable} already has ${current}`);
-          return;
-        }
-        el.textContent = numToRestore;
-        usedNumbers.add(numToRestore);
-        table1DoneNumbers = table1DoneNumbers.filter(n => n !== numToRestore);
-        sortTable1DoneNumbers();
-        set(ref(db,"tableNumbers/table" + chosenTable), numToRestore);
-        renderDoneList();
-        const nextBtn = document.getElementById("nextBtn" + chosenTable);
-        if (nextBtn) nextBtn.disabled = true;
-      }
-      highlightTable(chosenTable);
-      remove(ref(db,"owc/" + key));
-    };
+  if (chosenTable === 1) {
+    const vitalList = document.getElementById("vitalSignList");
+    if (vitalList.children.length >= MAX_VITAL_SIGN) {
+      toast("Cannot restore: Vital Sign Area full");
+      return;
+    }
+    addToVitalSignList(numToRestore);
+    set(ref(db, "tableNumbers/table1"), numToRestore);
+    document.getElementById("num1").textContent = numToRestore;
+    updateTableButtons(1);
+  } else {
+    const el = document.getElementById("num" + chosenTable);
+    const current = el.textContent;
+    if (current !== "0" && current !== "-") {
+      toast(`Cannot restore: Table ${chosenTable} already has ${current}`);
+      return;
+    }
+    el.textContent = numToRestore;
+    usedNumbers.add(numToRestore);
+    table1DoneNumbers = table1DoneNumbers.filter(n => n !== numToRestore);
+    sortTable1DoneNumbers();
+    set(ref(db, "tableNumbers/table" + chosenTable), numToRestore);
+    renderDoneList();
+    const nextBtn = document.getElementById("nextBtn" + chosenTable);
+    if (nextBtn) nextBtn.disabled = true;
+    updateTableButtons(chosenTable);
+  }
+
+  // ✨ Unified pulse
+  pulseTable(chosenTable, "yellow");
+
+  highlightTable(chosenTable);
+
+  // Remove from OWC in Firebase
+  remove(ref(db, "owc/" + key));
+};
+
 
     rightControls.appendChild(tableSelect);
     rightControls.appendChild(restoreBtn);
@@ -769,6 +879,21 @@ window.toggleHeader = function() {
     return btn;
   }
   function highlightTable(i){ const box = document.getElementById("tableBox"+i); if(!box) return; box.classList.add("highlight"); setTimeout(()=>box.classList.remove("highlight"), 1000); }
+function pulseTable(i, type = "green") {
+  const box = document.getElementById("tableBox" + i);
+  if (!box) return;
+
+  const classMap = {
+    green: "highlight",
+    red: "pulse-owc",
+    yellow: "pulse-restore"
+  };
+
+  const cls = classMap[type] || "highlight";
+  box.classList.add(cls);
+  setTimeout(() => box.classList.remove(cls), 800);
+}
+
 
   /* -------------------- COLLAPSIBLE TOGGLERS -------------------- */
   // we'll persist collapsed state in localStorage so UI remains consistent on reload
