@@ -14,64 +14,70 @@
 
   /* --------- HEADER --------- */
   #topHeader {
-  background:#4CAF50;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:10px 20px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.08);
-}
+    background:#4CAF50;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:10px 20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+  }
 
-#headerCenter {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
+  #headerCenter {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:5px 0;
+  }
 
-#headerRow {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:20px; /* space between logos and title */
-}
+  #headerRow {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px; /* closer logos */
+  }
 
-#headerTitle {
-  font-size:4em;
-  font-weight:900;
-  text-align:center;
-  text-shadow:2px 2px 6px rgba(0,0,0,0.25);
-  white-space:nowrap;
-}
+  #headerTitle {
+    font-size:4em;
+    font-weight:900;
+    text-align:center;
+    text-shadow:2px 2px 6px rgba(0,0,0,0.25);
+    white-space:nowrap;
+  }
 
-#headerClock {
-  font-size:2.5em;
-  font-weight:700;
-  text-shadow:2px 2px 6px rgba(0,0,0,0.25);
-  margin-top:5px;
-}
+  #headerClock {
+    font-size:2.5em;
+    font-weight:700;
+    text-shadow:2px 2px 6px rgba(0,0,0,0.25);
+    margin-top:5px;
+  }
 
-#headerLogoLeft,
-#headerLogoRight {
-  height:120px;  /* bigger logos */
-  width:auto;
-  object-fit:contain;
-}
+  #headerLogoLeft,
+  #headerLogoRight {
+    height:120px;
+    width:auto;
+    object-fit:contain;
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
+  }
 
-@media (max-width:900px){
-  #headerRow { gap:15px; }
-  #headerTitle { font-size:3em; }
-  #headerLogoLeft, #headerLogoRight { height:90px; }
-  #headerClock { font-size:2em; }
-}
-@media (max-width:600px){
-  #headerRow { gap:10px; }
-  #headerTitle { font-size:2em; }
-  #headerLogoLeft, #headerLogoRight { height:70px; }
-  #headerClock { font-size:1.6em; }
-}
-
-
+  @media (max-width:900px){
+    #headerRow { gap:8px; }
+    #headerTitle { font-size:3em; }
+    #headerLogoLeft, #headerLogoRight { height:90px; }
+    #headerClock { font-size:2em; }
+  }
+  @media (max-width:600px){
+    #headerRow { gap:6px; }
+    #headerTitle { font-size:2em; }
+    #headerLogoLeft, #headerLogoRight { height:70px; }
+    #headerClock { font-size:1.6em; }
+  }
+  @media (max-width:500px){
+    #headerRow { gap:5px; }
+    #headerTitle { font-size:1.8em; }
+    #headerLogoLeft, #headerLogoRight { height:50px; }
+    #headerClock { font-size:1.4em; }
+  }
 
   /* --------- MAIN LAYOUT --------- */
   #mainContainer { display:flex; flex-direction:column; gap:10px; padding:10px 20px; flex:1 1 auto; overflow:hidden; }
@@ -80,7 +86,19 @@
   #centerPanel { flex:2; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr 1fr; gap:10px; }
 
   .area-header { font-size:2em; font-weight:700; text-align:center; border-radius:25px; padding:15px; color:#fff; box-shadow:0 8px 25px rgba(0,0,0,0.08); }
-  .table-box { border-radius:25px; display:flex; flex-direction:column; justify-content:flex-start; transition:transform .2s, box-shadow .2s; padding:10px; overflow:hidden; background:rgba(255,255,255,0.03); }
+  .table-box {
+    border-radius:25px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center; /* center vertically */
+    align-items:center;    /* center horizontally */
+    transition: transform .2s, box-shadow .2s;
+    padding:10px;
+    overflow:hidden; /* prevents overflow */
+    background:rgba(255,255,255,0.03);
+    min-height:150px; /* optional: ensures enough space */
+}
+
   .title { font-size:2em; font-weight:700; margin-bottom:12px; text-align:center; }
 
   #table1Box { background:#007bff; color:#fff; }
@@ -94,9 +112,23 @@
 
   #centerPanel .table-box { background:#28a745; color:#fff; }
   .queue-number-consult {
-    font-weight:900; border-radius:20px; color:#fff; display:flex; justify-content:center; align-items:center;
-    padding:10px; font-size: clamp(4rem, 16vw, 10rem); transition:font-size .2s, box-shadow .3s; overflow:hidden; background: #28a745;
-  }
+    font-weight:900;
+    border-radius:20px;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:10px;
+    font-size: clamp(2rem, 12vw, 6rem); /* reduced maximum size */
+    text-align:center;
+    transition: font-size .2s, box-shadow .3s;
+    overflow-wrap: break-word; /* ensure wrapping if needed */
+    word-break: break-word;
+    white-space: nowrap; /* prevent breaking mid-number */
+    background: #28a745;
+    box-sizing: border-box; /* include padding in size calculations */
+}
+
 
   .queue-number.pulse, .queue-number-consult.pulse { animation: highlightPulse 1s ease-in-out; }
   @keyframes highlightPulse {
@@ -127,7 +159,7 @@
 </head>
 <body>
 
-<!-- ------------------- HEADER ------------------- -->
+<!-- -------- HEADER -------- -->
 <div id="topHeader">
   <div id="headerCenter">
     <div id="headerRow">
@@ -138,9 +170,6 @@
     <div id="headerClock">00:00:00</div>
   </div>
 </div>
-
-
-
 
 <div id="startOverlay">
   <button id="startBtn">Start Dashboard</button>
@@ -296,7 +325,8 @@ function loadTables(){
       if(val===lastKnown) return;
       numEl.textContent=val; lastKnown=val; localStorage.setItem(`table${i}`,val);
       numEl.style.background=tableColors[i]; numEl.style.color="#fff";
-      const len = val.length; numEl.style.fontSize = len<=3?'10em':len<=5?'8em':'6em';
+      const len = val.length; numEl.style.fontSize = `clamp(4rem, 16vw, 8rem)`;
+
       if(shouldAnnounce(val,i)){ speakQueuedNumber(val,i,"Now serving"); numEl.classList.add("pulse"); setTimeout(()=>numEl.classList.remove("pulse"),1000);}
     });
   });
