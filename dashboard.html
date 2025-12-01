@@ -13,10 +13,12 @@
   }
 
   #topHeader {
-    background:#4CAF50; color:#fff; display:flex; align-items:center; justify-content:center;
-    font-size:2.5em; font-weight:700; text-shadow:1px 1px 4px rgba(0,0,0,0.25);
-    box-shadow:0 4px 10px rgba(0,0,0,0.08); flex:0 0 80px;
-  }
+  background:#4CAF50; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:5.5em; font-weight:900; text-shadow:2px 2px 6px rgba(0,0,0,0.30);
+  box-shadow:0 4px 10px rgba(0,0,0,0.08); 
+  flex:0 0 130px; /* increased header height */
+}
+
 
   #mainContainer { display:flex; flex-direction:column; gap:10px; padding:10px 20px; flex:1 1 auto; overflow:hidden; }
   #gridsContainer { display:flex; gap:10px; flex:1; overflow:hidden; }
@@ -228,43 +230,58 @@ function updateVitalDisplayed(numbers){
 function loadVitalSignList() {
   const num1List = document.getElementById('num1List');
 
-  // Track announced numbers in-memory for this session only
+  // Track announced numbers only in memory (resets each page load)
   const announcedNumbers = new Set();
 
   onValue(ref(db, "vitalSignList"), snap => {
+
+    // If Firebase sends nothing → do NOT clear your display
+    if (!snap.exists()) {
+      console.warn("⚠ Firebase sent empty vitalSignList. Keeping previous display.");
+      return;
+    }
+
     const data = snap.val() || {};
 
-    // Sort entries and take top 10
+    // Convert to array and filter out invalid entries
     const entries = Object.entries(data)
+      .filter(([_, e]) => e && e.number && e.number !== "-" && e.number.trim() !== "")
       .sort((a, b) => {
         const [pA, nA] = (a[1].number || "").split("-");
         const [pB, nB] = (b[1].number || "").split("-");
         if (pA === pB) return parseInt(nA || 0, 10) - parseInt(nB || 0, 10);
         return (pA || "").localeCompare(pB || "");
       })
-      .slice(0, 10);
+      .slice(0, 10); // show only 10
 
-    // Clear current list
+    // If after filtering nothing remains → do not blank the screen
+    if (entries.length === 0) {
+      console.warn("⚠ VitalSignList has no valid entries. Keeping previous display.");
+      return;
+    }
+
+    // Clear list only when new valid data exists
     num1List.innerHTML = "";
 
     entries.forEach(([key, e]) => {
       const number = e.number || "";
-
       const div = document.createElement("div");
+
       div.className = "queue-number";
       div.textContent = number;
 
-      // VIP coloring
+      // VIP color
       const [prefix] = number.split("-");
-      div.style.background = (prefix && prefix.toUpperCase() === "VIP") ? "#ff9800" : "#007bff";
+      div.style.background =
+        prefix && prefix.toUpperCase() === "VIP" ? "#ff9800" : "#007bff";
 
       num1List.appendChild(div);
 
-      // Announce any number that hasn't been announced this session
+      // Announce new numbers only once per session
       if (!announcedNumbers.has(number)) {
         announcedNumbers.add(number);
 
-        // Speak number
+        // Speak the number
         speakQueuedNumber(number, 1, "Now serving");
 
         // Pulse effect
@@ -278,34 +295,52 @@ function loadVitalSignList() {
 }
 
 /* -------------------------- TABLES 2-5 (hold last number) -------------------------- */
-function loadTables(){
-  [2,3,4,5].forEach(i => {
+function loadTables() {
+  [2, 3, 4, 5].forEach(i => {
     const numEl = document.getElementById(`num${i}`);
 
-    // Initialize displayed number with 0 if empty
-    if(!numEl.textContent) numEl.textContent = "0";
+    // Load last known value from localStorage
+    let lastKnown = localStorage.getItem(`table${i}`) || "";
+    if (lastKnown) {
+      numEl.textContent = lastKnown;
+      numEl.style.background = tableColors[i];
+      numEl.style.color = "#fff";
+    }
 
     onValue(ref(db, `tableNumbers/table${i}`), snap => {
-      const val = snap.exists() ? snap.val() : null;
+      const val = snap.val();
 
-      // Only update if there’s a new valid number
-      if(val && val !== "-" && val !== numEl.textContent){
-        numEl.textContent = val;
+      // IGNORE values that should NOT update the display
+      if (val === null || val === undefined || val === "" || val === "-") {
+        console.warn(`⚠ Firebase sent an empty value for table ${i}, ignoring to prevent reset.`);
+        return; // Keep the last valid displayed number
+      }
 
-        // Set background and text color
-        numEl.style.background = tableColors[i]; 
-        numEl.style.color = "#fff";
+      // If no real change, stop
+      if (val === lastKnown) return;
 
-        // Adjust font size based on length
-        const len = val.length;
-        numEl.style.fontSize = len <= 3 ? '10em' : len <= 5 ? '8em' : '6em';
+      // Update display
+      numEl.textContent = val;
+      lastKnown = val;
+      localStorage.setItem(`table${i}`, val);
 
-        // Pulse and announce new number
-        if(shouldAnnounce(val, i)){
-          speakQueuedNumber(val, i, "Now serving");
-          numEl.classList.add("pulse");
-          setTimeout(() => numEl.classList.remove("pulse"), 1000);
-        }
+      // Color & text style
+      numEl.style.background = tableColors[i];
+      numEl.style.color = "#fff";
+
+      // Adjust font size based on length
+      const len = val.length;
+      numEl.style.fontSize = len <= 3 ? '10em'
+        : len <= 5 ? '8em'
+        : '6em';
+
+      // Announce the number
+      if (shouldAnnounce(val, i)) {
+        speakQueuedNumber(val, i, "Now serving");
+
+        // Pulse animation
+        numEl.classList.add("pulse");
+        setTimeout(() => numEl.classList.remove("pulse"), 1000);
       }
     });
   });
