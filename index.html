@@ -921,6 +921,7 @@ function applyTablePermissions() {
   onValue(ref(db,"table1DoneNumbers"), snap=>{
     table1DoneNumbers = snap.exists()? snap.val() : [];
     renderDoneList();
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
   });
 
   /* -------------------- NEXT / DONE / OWC / RECALL LOGIC -------------------- */
@@ -968,6 +969,7 @@ function applyTablePermissions() {
   sortTable1DoneNumbers();
   set(ref(db,"tableNumbers/table"+i), nextNum);
   renderDoneList();
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
 
   // ✅ Only disable NEXT until Done is pressed
   if(nextBtn) nextBtn.disabled = true;
@@ -984,6 +986,7 @@ window.doneQueue = function(i){
       table1DoneNumbers.push(num);
       sortTable1DoneNumbers();
       renderDoneList();
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
     } else {
       // Push to historyDone
       push(ref(db,"historyDone"), {
@@ -1126,6 +1129,7 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
       table1DoneNumbers.push(num);
       sortTable1DoneNumbers();
       renderDoneList();
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
       div.remove();
       remove(ref(db,"vitalSignList/"+num));
     };
@@ -1199,6 +1203,7 @@ Object.defineProperty(window, "selectedTable", {
   set(value) {
     _selectedTable = value;
     renderDoneList(); // automatically rerender when selection changes
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
   }
 });
 
@@ -1275,6 +1280,7 @@ tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
     // ✅ Remove from Done Numbers and refresh UI
     table1DoneNumbers = table1DoneNumbers.filter(x => x !== n);
     renderDoneList();
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
 }
  else{
             if (el.textContent !== "0" && el.textContent !== "-") {
@@ -1287,6 +1293,7 @@ tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
             sortTable1DoneNumbers();
             set(ref(db, "tableNumbers/table" + chosenTable), n);
             renderDoneList(); // refresh after restore
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
             const nextBtn = document.getElementById("nextBtn" + chosenTable);
             if (nextBtn) nextBtn.disabled = true;
             updateTableButtons(chosenTable);
@@ -1385,6 +1392,7 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
     sortTable1DoneNumbers();
     set(ref(db, "tableNumbers/table" + chosenTable), numToRestore);
     renderDoneList();
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
     const nextBtn = document.getElementById("nextBtn" + chosenTable);
     if (nextBtn) nextBtn.disabled = true;
     updateTableButtons(chosenTable);
@@ -1445,7 +1453,7 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
 
   // Render Done Numbers again
   renderDoneList();
-
+  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
   toast("Queues reset");
 };
 
@@ -1658,6 +1666,9 @@ window.changeTable = function() {
   document.getElementById("modalOverlay").style.display = "none"; // close settings modal
   document.getElementById("userMenuOverlay").style.display = "flex"; // show table selection
 };
+function saveDoneNumbersToFirebase() {
+  set(ref(db, "table1DoneNumbers"), table1DoneNumbers);
+}
 
   /* -------------------- END -------------------- */
 </script>
