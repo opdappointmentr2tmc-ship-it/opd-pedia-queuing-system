@@ -114,14 +114,14 @@
   font-weight: 900;
   border-radius: 20px;
   color: #fff;
-  padding: 5px 10px;      /* some padding */
-  font-size: 4rem;        /* smaller, safe size */
-  max-height: 150px;      /* fits table height */
+  padding: 5px 10px;
+  max-height: 100%;
   line-height: 1;
   text-align: center;
-  overflow: hidden;       /* prevents overflow */
+  overflow: hidden;
   white-space: nowrap;
   box-sizing: border-box;
+  font-size: clamp(2rem, 8vw, 4rem); /* scales with screen width */
 }
 
 /* Consultation Tables (Tables 2-5) */
@@ -133,13 +133,13 @@
   border-radius: 20px;
   color: #fff;
   padding: 5px 10px;
-  font-size: 5rem;       /* smaller, safe size */
-  max-height: 200px;     /* fits table-box height */
+  max-height: 100%;
   line-height: 1;
   text-align: center;
   overflow: hidden;
   white-space: nowrap;
   box-sizing: border-box;
+  font-size: clamp(3rem, 15vw, 8rem); /* scales with screen width */
 }
 
 
@@ -369,10 +369,22 @@ function loadTables(){
       if(val===lastKnown) return;
       numEl.textContent=val; lastKnown=val; localStorage.setItem(`table${i}`,val);
       numEl.style.background=tableColors[i]; numEl.style.color="#fff";
-      const len = val.length; numEl.style.fontSize = `clamp(6rem, 22vw, 14rem)`;
+      // Remove explicit font-size — CSS handles it automatically
+numEl.style.fontSize = ""; // reset to CSS-defined clamp
+
 
 
       if(shouldAnnounce(val,i)){ speakQueuedNumber(val,i,"Now serving"); numEl.classList.add("pulse"); setTimeout(()=>numEl.classList.remove("pulse"),1000);}
+
+const resizeFont = (el) => {
+  let fontSize = parseInt(window.getComputedStyle(el).fontSize);
+  while (el.scrollWidth > el.clientWidth && fontSize > 10) {
+    fontSize -= 1;
+    el.style.fontSize = fontSize + "px";
+  }
+};
+resizeFont(numEl);
+
     });
   });
 }
@@ -424,6 +436,16 @@ document.getElementById('startBtn').addEventListener('click', ()=>{
   loadTables();
   loadOWCList();
 });
+
+function fitNumber(el) {
+  let fontSize = parseInt(window.getComputedStyle(el).fontSize);
+  while (el.scrollWidth > el.clientWidth && fontSize > 10) {
+    fontSize -= 1;
+    el.style.fontSize = fontSize + "px";
+  }
+}
+fitNumber(numEl);
+
 </script>
 </body>
 </html>
