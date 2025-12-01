@@ -86,56 +86,76 @@
   #centerPanel { flex:2; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr 1fr; gap:10px; }
 
   .area-header { font-size:2em; font-weight:700; text-align:center; border-radius:25px; padding:15px; color:#fff; box-shadow:0 8px 25px rgba(0,0,0,0.08); }
-  .table-box {
-    border-radius:25px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center; /* center vertically */
-    align-items:center;    /* center horizontally */
-    transition: transform .2s, box-shadow .2s;
-    padding:10px;
-    overflow:hidden; /* prevents overflow */
-    background:rgba(255,255,255,0.03);
-    min-height:150px; /* optional: ensures enough space */
+.table-box {
+  border-radius: 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* center vertically */
+  align-items: center;     /* center horizontally */
+  padding: 10px;           /* enough padding */
+  overflow: hidden;        /* only clip children if needed */
+  background: #007bff;     /* or #28a745, your previous colors */
+  color: #fff;
+  min-height: 150px;       /* ensures box is big enough */
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
 }
+
 
   .title { font-size:2em; font-weight:700; margin-bottom:12px; text-align:center; }
 
   #table1Box { background:#007bff; color:#fff; }
   #num1List { display:grid; grid-template-columns:repeat(2,1fr); grid-auto-rows:minmax(80px,auto); gap:10px; width:100%; overflow-y:auto; }
 
-  .queue-number {
-    width:100%; display:flex; justify-content:center; align-items:center; font-weight:900; border-radius:20px;
-    color:#fff; padding:10px 0; font-size: clamp(2.4rem, 6vw, 4rem); text-align:center; transition:transform .15s, opacity .2s, box-shadow .25s;
-    background:#007bff;
-  }
+  /* Vital Sign Table (Table 1) */
+.queue-number {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 900;
+  border-radius: 20px;
+  color: #fff;
+  padding: 5px 10px;      /* some padding */
+  font-size: 4rem;        /* smaller, safe size */
+  max-height: 150px;      /* fits table height */
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;       /* prevents overflow */
+  white-space: nowrap;
+  box-sizing: border-box;
+}
 
-  #centerPanel .table-box { background:#28a745; color:#fff; }
-  .queue-number-consult {
-    font-weight:900;
-    border-radius:20px;
-    color:#fff;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:10px;
-    font-size: clamp(2rem, 12vw, 6rem); /* reduced maximum size */
-    text-align:center;
-    transition: font-size .2s, box-shadow .3s;
-    overflow-wrap: break-word; /* ensure wrapping if needed */
-    word-break: break-word;
-    white-space: nowrap; /* prevent breaking mid-number */
-    background: #28a745;
-    box-sizing: border-box; /* include padding in size calculations */
+/* Consultation Tables (Tables 2-5) */
+.queue-number-consult {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 900;
+  border-radius: 20px;
+  color: #fff;
+  padding: 5px 10px;
+  font-size: 5rem;       /* smaller, safe size */
+  max-height: 200px;     /* fits table-box height */
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 
-  .queue-number.pulse, .queue-number-consult.pulse { animation: highlightPulse 1s ease-in-out; }
-  @keyframes highlightPulse {
-    0% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform:scale(1); }
-    50% { box-shadow: 0 0 50px rgba(0,123,255,0.9); transform:scale(1.12); }
-    100% { box-shadow: 0 0 25px rgba(0,123,255,0.8); transform:scale(1); }
-  }
+
+
+
+  .queue-number.pulse, .queue-number-consult.pulse {
+  animation: highlightPulse 1s ease-in-out;
+}
+
+@keyframes highlightPulse {
+  0% { box-shadow: 0 0 35px rgba(0,123,255,0.8); transform:scale(1); }
+  50% { box-shadow: 0 0 70px rgba(0,123,255,0.9); transform:scale(1.15); }
+  100% { box-shadow: 0 0 35px rgba(0,123,255,0.8); transform:scale(1); }
+}
+
 
   #owcContainer {
     background:rgba(245,245,245,0.55); backdrop-filter:blur(8px); border-radius:25px; padding:20px;
@@ -154,6 +174,30 @@
 
   @media (max-width:1200px){ #gridsContainer{flex-direction:column;} #centerPanel{grid-template-rows:auto auto auto;} #owcList{grid-template-columns:repeat(3,1fr);} }
   @media (max-width:700px){ #owcList{grid-template-columns:repeat(2,1fr);} .queue-number-consult{font-size: clamp(3.2rem, 18vw, 6rem); } .queue-number{font-size: clamp(2rem, 8vw, 2.8rem); } }
+
+#centerPanel .table-box {
+  background: #28a745; /* keeps the green background */
+  color: #fff;
+  border-radius: 25px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-height: 150px; 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.queue-number-consult {
+  font-size: 5rem; /* number fits inside box */
+  max-height: 100%; /* number stays inside box */
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 
 </style>
 </head>
@@ -325,7 +369,8 @@ function loadTables(){
       if(val===lastKnown) return;
       numEl.textContent=val; lastKnown=val; localStorage.setItem(`table${i}`,val);
       numEl.style.background=tableColors[i]; numEl.style.color="#fff";
-      const len = val.length; numEl.style.fontSize = `clamp(4rem, 16vw, 8rem)`;
+      const len = val.length; numEl.style.fontSize = `clamp(6rem, 22vw, 14rem)`;
+
 
       if(shouldAnnounce(val,i)){ speakQueuedNumber(val,i,"Now serving"); numEl.classList.add("pulse"); setTimeout(()=>numEl.classList.remove("pulse"),1000);}
     });
