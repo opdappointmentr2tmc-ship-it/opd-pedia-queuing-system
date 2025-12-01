@@ -352,6 +352,8 @@ button.common:not(:disabled):hover {
 
   <div id="toastContainer"></div>
 
+
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
@@ -407,33 +409,65 @@ button.common:not(:disabled):hover {
     document.getElementById("userMenuOverlay").style.display = "flex";
     closeSettings();
   };
-// Safe page load initializer
+
+
 // Safe page load initializer
 window.addEventListener("load", () => {
   // Render tables first
   renderTables();
 
+  // Force table selection on each refresh
+  let selectedTable = null;
+  const overlay = document.getElementById("userMenuOverlay");
+  overlay.style.display = "flex"; // always show overlay on load
+
+  // Disable all NEXT buttons except Table 1 initially
+  for (let i = 1; i <= TOTAL_TABLES; i++) {
+    const nextBtn = document.getElementById("nextBtn" + i);
+    if (nextBtn) nextBtn.disabled = i !== 1; // Table 1 always enabled
+  }
+
+  // Setup table selection buttons inside overlay
+  const tableButtons = document.querySelectorAll(".table-button"); // adjust selector
+  tableButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedTable = btn.dataset.table; // assume button has data-table="1" etc.
+      sessionStorage.setItem("selectedTable", selectedTable);
+
+      // Apply permissions & hide overlay
+      applyTablePermissions();
+      overlay.style.display = "none";
+
+      // Enable NEXT buttons for all tables except Table 1 (already enabled)
+      for (let i = 2; i <= TOTAL_TABLES; i++) {
+        const nextBtn = document.getElementById("nextBtn" + i);
+        if (nextBtn) nextBtn.disabled = false;
+      }
+
+      // Initialize button states after selection
+      for (let i = 1; i <= TOTAL_TABLES; i++) {
+        updateTableButtons(i);
+      }
+    });
+  });
+
+  // Firebase listeners for table numbers
   for (let i = 1; i <= TOTAL_TABLES; i++) {
     const el = document.getElementById("num" + i);
     const nextBtn = document.getElementById("nextBtn" + i);
 
-    // Listen to Firebase for table number updates
     onValue(ref(db, "tableNumbers/table" + i), snap => {
       const val = snap.exists() ? snap.val() : (i === 1 ? "0" : "-");
       el.textContent = val;
 
-      // Track used numbers for tables > 1
       if (i !== 1 && val !== "0" && val !== "-") usedNumbers.add(val);
 
-      // Update button states
+      // Update button states dynamically
       updateTableButtons(i);
-
-      // NEXT button for Table 1 is always enabled
-      if (i === 1 && nextBtn) nextBtn.disabled = false;
     });
   }
 
-  // Listen to Firebase for prefixes
+  // Firebase listener for prefixes
   onValue(ref(db, "settings/prefixes"), snap => {
     prefixes = snap.exists() ? snap.val() : [];
     document.getElementById("prefixInput").value = prefixes.join(",");
@@ -448,16 +482,7 @@ window.addEventListener("load", () => {
       });
     }
   });
-
-  // Apply table visibility based on previously selected table
-  applyTablePermissions();
-
-  // Initialize button states after all Firebase values are loaded
-  for (let i = 1; i <= TOTAL_TABLES; i++) {
-    updateTableButtons(i);
-  }
 });
-
 
 
   /* -------------------- RENDER TABLES -------------------- */
@@ -1024,11 +1049,19 @@ function pulseTable(i, type = "green") {
     const cur = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
     setCollapsedUI(key, !cur);
   };
-  window.toggleDone = function(){
-    const key = "done";
-    const cur = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
-    setCollapsedUI(key, !cur);
-  };
+window.toggleDone = function(){
+  const key = "done";
+  const cur = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
+  setCollapsedUI(key, !cur);
+};
+
+// Initialize collapsible UI based on stored states
+window.addEventListener("load", ()=>{
+  Object.keys(COLLAPSE_KEYS).forEach(key=>{
+    const collapsed = localStorage.getItem(COLLAPSE_KEYS[key]) === "1";
+    setCollapsedUI(key, collapsed);
+  });
+});
 
   // initialize collapsible states on load
   (function initCollapsibles(){
