@@ -5,103 +5,190 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pediatric Clinic Queueing System</title>
 <style>
-  /* ====== THEME / BASE ====== */
-  :root{
-    --bg:#f0f2f5;
-    --primary:#007bff;
-    --done:#6c757d;
-    --owc:#ffc107;
-    --recall:#17a2b8;
-    --success:#28a745;
-    --danger:#dc3545;
-    --card-bg: #ffffff;
-    --shadow: 0 8px 25px rgba(0,0,0,0.08);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI, Tahoma, sans-serif}
-  body{background:var(--bg);color:#222;padding:20px;min-height:100vh}
+/* ====== THEME / BASE ====== */
+:root {
+  --bg: #f0f2f5;
+  --primary: #007bff;
+  --done: #6c757d;
+  --owc: #ffc107;
+  --recall: #17a2b8;
+  --success: #28a745;
+  --danger: #dc3545;
+  --card-bg: #ffffff;
+  --shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
 
-  /* ===== HEADER ===== */
-  #headerBar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-  h1{font-size:1.4rem}
-  #settingsButton{padding:12px 16px;border-radius:10px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:700}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Segoe UI, Tahoma, sans-serif;
+}
 
-  /* ===== LAYOUT ===== */
-  #tablesContainer{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
-  #tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;flex:1}
-  .table-box{background:var(--card-bg);padding:18px;border-radius:14px;box-shadow:var(--shadow);text-align:center;transition:all .25s ease}
-  .table-box.highlight{animation:highlightPulse 1s ease-in-out}
-  @keyframes highlightPulse{0%{box-shadow:0 0 20px rgba(40,167,69,0.75);transform:scale(1)}50%{box-shadow:0 0 40px rgba(40,167,69,0.9);transform:scale(1.03)}100%{box-shadow:0 0 20px rgba(40,167,69,0.75);transform:scale(1)}}
-  .table-box.pulse{animation:pulseRecall 1s ease-in-out}
-  @keyframes pulseRecall{0%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1)}50%{box-shadow:0 0 40px rgba(23,162,184,0.95);transform:scale(1.05)}100%{box-shadow:0 0 20px rgba(23,162,184,0.8);transform:scale(1)}}
+body {
+  background: var(--bg);
+  color: #222;
+  padding: 20px;
+  min-height: 100vh;
+}
 
-  .queue-number{font-size:60px;font-weight:900;background:#e7eaed;padding:16px;border-radius:12px;margin:18px 0;word-break:break-word}
+/* ===== HEADER ===== */
+#headerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.4s ease;
+  max-height: 200px;
+  opacity: 1;
+}
 
-  button.common{padding:10px;border-radius:10px;border:none;font-weight:700;color:#fff;cursor:pointer}
-  .next-btn{background:var(--primary)}
-  .done-btn{background:var(--done)}
-  .owc-btn{background: var(--danger); /* Red color */
+#headerBar.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+#settingsButton {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--primary);
   color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
 }
+
+/* ===== LAYOUT ===== */
+#tablesContainer {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+#tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  flex: 1;
+}
+
+#historyContainer,
+#owcContainer {
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#historyContainer {
+  width: 280px;
+}
+
+#owcContainer {
+  width: 320px;
+}
+
+/* ===== TABLE BOX ===== */
+.table-box {
+  background: var(--card-bg);
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: all 0.25s ease;
+}
+
+.table-box.highlight {
+  animation: highlightPulse 1s ease-in-out;
+}
+
+@keyframes highlightPulse {
+  0% { box-shadow: 0 0 20px rgba(40,167,69,0.75); transform: scale(1); }
+  50% { box-shadow: 0 0 40px rgba(40,167,69,0.9); transform: scale(1.03); }
+  100% { box-shadow: 0 0 20px rgba(40,167,69,0.75); transform: scale(1); }
+}
+
+.table-box.pulse {
+  animation: pulseRecall 1s ease-in-out;
+}
+
+@keyframes pulseRecall {
+  0% { box-shadow: 0 0 20px rgba(23,162,184,0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 40px rgba(23,162,184,0.95); transform: scale(1.05); }
+  100% { box-shadow: 0 0 20px rgba(23,162,184,0.8); transform: scale(1); }
+}
+
+.table-box.pulse-owc {
+  animation: pulseOWCTable 0.8s ease-in-out;
+}
+
+@keyframes pulseOWCTable {
+  0% { box-shadow: 0 0 8px rgba(220,53,69,0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 25px rgba(220,53,69,0.95); transform: scale(1.03); }
+  100% { box-shadow: 0 0 8px rgba(220,53,69,0.8); transform: scale(1); }
+}
+
+.table-box.pulse-restore {
+  animation: pulseRestore 0.8s ease-in-out;
+}
+
+@keyframes pulseRestore {
+  0% { box-shadow: 0 0 8px rgba(255,193,7,0.8); transform: scale(1); }
+  50% { box-shadow: 0 0 25px rgba(255,193,7,0.95); transform: scale(1.03); }
+  100% { box-shadow: 0 0 8px rgba(255,193,7,0.8); transform: scale(1); }
+}
+
+/* ===== QUEUE NUMBER ===== */
+.queue-number {
+  font-size: 60px;
+  font-weight: 900;
+  background: #e7eaed;
+  padding: 16px;
+  border-radius: 12px;
+  margin: 18px 0;
+  word-break: break-word;
+}
+
+/* ===== BUTTONS ===== */
+button.common {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
 button.common:disabled {
-  background: #ccc !important;    /* Gray background */
-  color: #666 !important;         /* Darker gray text */
-  cursor: not-allowed;            /* Change cursor to not-allowed */
-  opacity: 0.7;                   /* Slightly faded */
-  box-shadow: none;               /* Remove shadow when disabled */
-  transform: none;                /* Remove any hover/active effect */
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+  transform: none;
 }
+
 button.common:not(:disabled):hover {
-  transform: scale(1.03);         /* Slight zoom on hover for enabled buttons */
+  transform: scale(1.03);
   box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
-  .recall-btn{background:var(--recall)}
-  .small-btn{padding:6px 10px;border-radius:8px;font-weight:700}
+.next-btn { background: var(--primary); }
+.done-btn { background: var(--done); }
+.owc-btn { background: var(--danger); color: #fff; }
+.recall-btn { background: var(--recall); }
+.small-btn { padding: 6px 10px; border-radius: 8px; font-weight: 700; }
 
-  /* ===== RIGHT COLUMN ===== */
-  #owcContainer{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
-  #owcContainer .card{background:var(--card-bg);padding:14px;border-radius:14px;box-shadow:var(--shadow)}
-
-  /* ===== VITAL & DONE ===== */
-  #vitalAndDone{display:flex;gap:20px;margin-top:24px;flex-wrap:wrap}
-  #vitalSignContainer,#doneContainer{flex:1;min-width:220px}
-  h2.section-title{font-size:1.05rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-
-  /* list grids */
-  .done-number{background:#dfe4e8;padding:10px;height:60px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:900;word-break:break-word}
-  .owc-item{background:#f7f7f7;padding:12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:16px;word-break:break-word}
-
-  /* ===== COLLAPSIBLE PANEL (SLIDE) =====
-     We'll animate max-height. Set a generous max-height so it can contain content.
-  */
-  .collapsible-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .toggle-btn{background:transparent;border:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;padding:6px;border-radius:8px}
-  .toggle-btn .arrow{display:inline-block;transition:transform .28s ease}
-  .toggle-btn.collapsed .arrow{transform:rotate(-90deg)}
-
-  .collapsible-content{overflow:hidden;max-height:1200px;transition:max-height .36s ease,opacity .28s ease;padding-top:10px}
-  .collapsible-content.collapsed{max-height:0;padding-top:0;opacity:0}
-
-  /* small UI helpers */
-  .prefix-dropdown{width:100%;padding:8px;border-radius:8px;margin-top:10px;text-align:center}
-  .prefix-color{padding:4px 8px;border-radius:6px;color:#fff;font-weight:800;font-size:13px;margin-right:6px}
-  .controls-row{display:flex;gap:8px;margin-top:8px}
-  .owc-list{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow-y:auto;padding-right:6px}
-  .vital-list-grid,.done-list-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-height:500px;overflow-y:auto}
-  @media(max-width:900px){ .vital-list-grid,.done-list-grid{grid-template-columns:repeat(4,1fr)} }
-  @media(max-width:700px){ .vital-list-grid,.done-list-grid{grid-template-columns:repeat(3,1fr)} .queue-number{font-size:50px} }
-  @media(max-width:500px){ #tablesContainer{flex-direction:column} #vitalAndDone{flex-direction:column} .vital-list-grid,.done-list-grid{grid-template-columns:repeat(2,1fr)} .queue-number{font-size:40px;padding:10px} button.common{font-size:14px;padding:10px} h1,h2{font-size:1.1rem} }
-  @media(max-width:400px){ .queue-number{font-size:32px;padding:8px} button.common{font-size:12px;padding:8px} h1,h2{font-size:1rem} }
-
-  /* modals & overlays */
-  #modalOverlay,#userMenuOverlay{position:fixed;top:0;left:0;width:100%;height:100%;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,0.45);z-index:2000}
-  #userMenuBox,#modalBox{background:#fff;padding:22px;border-radius:16px;width:90%;max-width:360px;text-align:center;box-shadow:var(--shadow)}
-  .toast{position:fixed;top:20px;right:20px;background:#333;color:#fff;padding:10px 14px;border-radius:8px;opacity:0.95;z-index:3000;font-size:14px}
-
-  /* tiny action buttons inside lists */
-  .list-action-btn{padding:6px 8px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-  .restore-select{padding:6px;border-radius:6px;border:1px solid #ccc;font-weight:600;margin-right:8px}
-/* Make table buttons big and full width */
+/* ===== TABLE BUTTON STACK ===== */
 .table-buttons {
   display: flex;
   flex-direction: column;
@@ -116,129 +203,24 @@ button.common:not(:disabled):hover {
   border-radius: 10px;
   font-weight: 800;
 }
-/* SETTINGS MODAL BUTTON STACK - PERFECTLY CENTERED */
+
+/* SETTINGS MODAL BUTTON STACK */
 .settings-buttons {
   display: flex;
   flex-direction: column;
-  align-items: center;     /* centers the entire group */
-  justify-content: center; /* vertically centers inside modal */
+  align-items: center;
+  justify-content: center;
   width: 100%;
   gap: 14px;
   margin-top: 22px;
 }
 
 .settings-buttons button {
-  width: 92%;              /* slight side margin */
+  width: 92%;
   padding: 16px;
   font-size: 16px;
   font-weight: 800;
   border-radius: 12px;
-}
-
-/* Vital Sign List & Done Numbers List CARD INCLUDING TITLE */
-#vitalSignContainer .card,
-#doneContainer .card {
-  background: var(--card-bg);  /* white background */
-  border-radius: 14px;         /* rounded corners like tables */
-  box-shadow: var(--shadow);   /* matching shadow */
-  padding: 16px;               /* inner padding */
-  display: flex;
-  flex-direction: column;
-  gap: 12px;                   /* space between title and list */
-}
-
-/* Inner lists */
-#vitalSignList, #doneNumbersList {
-  background: var(--card-bg);  /* white background to match card */
-  border-radius: 12px;         /* slightly smaller radius for inner list */
-  box-shadow: var(--shadow);   /* subtle inner shadow if needed */
-  padding: 12px;               /* spacing inside the list */
-  max-height: 500px;
-  overflow-y: auto;
-  display: grid;
-  gap: 10px;
-}
-
-#vitalSignList .done-number > div:first-child {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 1;
-  min-width: 0; /* critical */
-}
-
-#vitalSignList .done-number > div:first-child span.prefix-color {
-  flex-shrink: 0; /* prefix never shrinks */
-}
-
-#vitalSignList .done-number > div:first-child span:last-child {
-  flex: 1 1 auto;   /* take remaining space */
-  min-width: 0;     /* allow shrinking properly */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#vitalSignList .done-number div:last-child {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;   /* buttons never shrink */
-}
-
-
-
-.prefix-color {
-  flex-shrink: 0;         /* prevent shrinking */
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 12px;        /* smaller font to prevent overflow */
-  font-weight: 800;
-  white-space: nowrap;     /* keep prefix text in one line */
-}
-
-#vitalSignList .done-number span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis; /* truncate with ... if number is too long */
-  max-width: 60px;          /* adjust width to fit box */
-}
-/* Smooth sliding for header */
-#headerBar {
-  overflow: hidden;
-  transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.4s ease;
-  max-height: 200px; /* adjust to fit header height */
-  opacity: 1;
-}
-
-#headerBar.collapsed {
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  opacity: 0;
-}
-
-/* Table pulse for OWC (red) */
-@keyframes pulseOWCTable {
-  0% { box-shadow: 0 0 8px rgba(220,53,69,0.8); transform: scale(1); }
-  50% { box-shadow: 0 0 25px rgba(220,53,69,0.95); transform: scale(1.03); }
-  100% { box-shadow: 0 0 8px rgba(220,53,69,0.8); transform: scale(1); }
-}
-
-.table-box.pulse-owc {
-  animation: pulseOWCTable 0.8s ease-in-out;
-}
-
-/* Table pulse for restore (yellow) */
-@keyframes pulseRestore {
-  0% { box-shadow: 0 0 8px rgba(255,193,7,0.8); transform: scale(1); }
-  50% { box-shadow: 0 0 25px rgba(255,193,7,0.95); transform: scale(1.03); }
-  100% { box-shadow: 0 0 8px rgba(255,193,7,0.8); transform: scale(1); }
-}
-
-.table-box.pulse-restore {
-  animation: pulseRestore 0.8s ease-in-out;
-}
-
-/* SETTINGS MODAL BUTTON TEXT COLOR */
-#modalBox button {
   color: #fff !important;
 }
 
@@ -246,111 +228,466 @@ button.common:not(:disabled):hover {
   opacity: 0.9;
 }
 
+/* ===== VITAL & DONE CONTAINERS ===== */
+#vitalAndDone {
+  display: flex;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+#vitalSignContainer, #doneContainer {
+  flex: 1;
+  min-width: 220px;
+}
+
+h2.section-title {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* CARD STYLING FOR VITAL & DONE */
+#vitalSignContainer .card,
+#doneContainer .card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* INNER LISTS */
+#vitalSignList, #doneNumbersList {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  max-height: 500px;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.done-number, .owc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #dfe4e8;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 900;
+  word-break: break-word;
+}
+
+.done-number > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.done-number > div:first-child span.prefix-color {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.done-number > div:first-child span:last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60px;
+}
+
+.done-number > div:last-child {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ===== COLLAPSIBLE PANEL ===== */
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.toggle-btn .arrow {
+  display: inline-block;
+  transition: transform 0.28s ease;
+}
+
+.toggle-btn.collapsed .arrow {
+  transform: rotate(-90deg);
+}
+
+.collapsible-content {
+  overflow: hidden;
+  max-height: 1200px;
+  transition: max-height 0.36s ease, opacity 0.28s ease, padding-top 0.28s ease;
+  padding-top: 10px;
+}
+
+.collapsible-content.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  opacity: 0;
+}
+
+/* ===== SELECTS & CONTROLS ===== */
+.prefix-dropdown { width: 100%; padding: 8px; border-radius: 8px; margin-top: 10px; text-align: center; }
+.controls-row { display: flex; gap: 8px; margin-top: 8px; }
+.owc-list { display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; padding-right: 6px; }
+
+/* ACTION BUTTONS INSIDE LISTS */
+.list-action-btn { padding: 6px 8px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; }
+.restore-select { padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-weight: 600; margin-right: 6px; }
+
+/* ===== MODALS & OVERLAYS ===== */
+#modalOverlay, #userMenuOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.45);
+  z-index: 2000;
+}
+
+#userMenuBox, #modalBox {
+  background: #fff;
+  padding: 22px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  opacity: 0.95;
+  z-index: 3000;
+  font-size: 14px;
+}
+
+/* ===== HISTORY DONE LIST ===== */
+#historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+#historyList .owc-item {
+  background: #f7f7f7;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 900;
+  font-size: 16px;
+  word-break: break-word;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width: 900px) {
+  .vital-list-grid, .done-list-grid { grid-template-columns: repeat(4,1fr); }
+  #tablesContainer, #historyContainer, #owcContainer, #tables { width: 100%; flex-direction: column; }
+}
+
+@media(max-width: 700px) {
+  .vital-list-grid, .done-list-grid { grid-template-columns: repeat(3,1fr); }
+  .queue-number { font-size: 50px; }
+}
+
+@media(max-width: 500px) {
+  .vital-list-grid, .done-list-grid { grid-template-columns: repeat(2,1fr); }
+  .queue-number { font-size: 40px; padding: 10px; }
+  button.common { font-size: 14px; padding: 10px; }
+  h1, h2 { font-size: 1.1rem; }
+}
+
+@media(max-width: 400px) {
+  .queue-number { font-size: 32px; padding: 8px; }
+  button.common { font-size: 12px; padding: 8px; }
+  h1, h2 { font-size: 1rem; }
+}
+
+/* ===== RIGHT PANEL - OWC ===== */
+#owcContainer {
+  width: 320px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#owcContainer .card {
+  background: var(--card-bg);
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.owc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px; /* scrollbar spacing */
+}
+
+.owc-item {
+  background: #f7f7f7;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 900;
+  font-size: 16px;
+  word-break: break-word;
+}
+
+/* Restore select & buttons inside OWC */
+.restore-select {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.list-action-btn {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* ===== LEFT PANEL - History Done List ===== */
+#historyContainer {
+  width: 280px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#historyContainer .card {
+  background: var(--card-bg);
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px; /* scrollbar spacing */
+}
+
+#historyList .owc-item {
+  background: #f7f7f7;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 900;
+  font-size: 16px;
+  word-break: break-word;
+}
+.prefix-color {
+  flex-shrink: 0;         
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;        
+  font-weight: 800;
+  white-space: nowrap;     
+  color: #fff; /* Ensure the text is visible on colored background */
+}
+/* ===== FIXED HEADER ===== */
+/* Ensure header is at the very top */
+#headerBar {
+  margin-bottom: 20px; /* space below the header */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 </style>
 </head>
 <body>
-  <!-- STARTUP USER MENU -->
-  <div id="userMenuOverlay">
-    <div id="userMenuBox">
-      <h2>Select Your Table</h2>
-      <select id="tableSelectMenu" style="width:100%;padding:10px;margin-top:10px;border-radius:8px;font-size:16px">
-        <option value="">-- Choose Table --</option>
-        <option value="1">Table 1</option>
-        <option value="2">Table 2</option>
-        <option value="3">Table 3</option>
-        <option value="4">Table 4</option>
-        <option value="5">Table 5</option>
-        <option value="all">Nurse Station (Show All Tables)</option>
-      </select>
-      <button class="small-btn" style="margin-top:14px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:800" onclick="confirmTableSelection()">Continue</button>
-    </div>
+<!-- STARTUP USER MENU -->
+<div id="userMenuOverlay">
+  <div id="userMenuBox">
+    <h2>Select Your Table</h2>
+    <select id="tableSelectMenu" style="width:100%;padding:10px;margin-top:10px;border-radius:8px;font-size:16px">
+      <option value="">-- Choose Table --</option>
+      <option value="1">Table 1</option>
+      <option value="2">Table 2</option>
+      <option value="3">Table 3</option>
+      <option value="4">Table 4</option>
+      <option value="5">Table 5</option>
+      <option value="all">Nurse Station (Show All Tables)</option>
+    </select>
+    <button class="small-btn" style="margin-top:14px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:800" onclick="confirmTableSelection()">Continue</button>
   </div>
+</div>
+
+<!-- HEADER & SETTINGS BUTTON -->
+<div id="headerBar">
+  <h1>Pediatric Clinic Queueing System</h1>
+  <button id="settingsButton" onclick="showSettings()">Settings ⚙️</button>
+</div>
+
+<!-- OPTIONAL HEADER TOGGLE BUTTON -->
 <div style="margin-bottom:12px;">
   <button id="headerToggleBtn" class="small-btn" onclick="toggleHeader()" style="background:#17a2b8;color:#fff;display:flex;align-items:center;justify-content:center;">
     <span id="headerToggleIcon" style="display:inline-block;transition: transform 0.4s ease;">▾</span>
   </button>
 </div>
 
-  <div id="headerBar">
-    <h1>Pediatric Clinic Queueing System</h1>
-    <button id="settingsButton" onclick="showSettings()">Settings ⚙️</button>
-  </div>
+<!-- MAIN CONTAINER -->
+<div id="tablesContainer">
 
-  <div id="tablesContainer">
-    <div id="tables"></div>
-
-    <div id="owcContainer">
-      <div class="card">
-        <div class="collapsible-header">
-          <div style="display:flex;align-items:center;gap:8px">
-            <h2 class="section-title" style="margin:0;font-size:1rem">OUT WHEN CALLED</h2>
-            
-          </div>
-          <button id="owcToggleBtn" class="toggle-btn" onclick="toggleOWC()" aria-expanded="true" title="Toggle OWC list">
-            <span class="arrow">▾</span>
-            <span id="owcToggleLabel">Hide</span>
-          </button>
-        </div>
-
-        <!-- collapsible content -->
-        <div id="owcContent" class="collapsible-content">
-          <div id="owcList" class="owc-list"></div>
-        </div>
+  <!-- LEFT PANEL: History Done -->
+  <div id="historyContainer">
+    <div class="card">
+      <div class="collapsible-header">
+        <h2 class="section-title">History Done List</h2>
+        <button id="historyToggleBtn" class="toggle-btn" onclick="toggleHistory()" aria-expanded="true">
+          <span class="arrow">▾</span>
+          <span id="historyToggleLabel">Hide</span>
+        </button>
+      </div>
+      <div id="historyContent" class="collapsible-content">
+        <div id="historyList" class="owc-list"></div>
       </div>
     </div>
   </div>
 
-  <div id="vitalAndDone">
-    <div id="vitalSignContainer">
-      <div class="card">
-        <div class="collapsible-header">
-          <h2 class="section-title" style="margin:0">Vital Sign List</h2>
-          <button id="vitalToggleBtn" class="toggle-btn" onclick="toggleVital()" aria-expanded="true" title="Toggle Vital Sign list">
-            <span class="arrow">▾</span>
-            <span id="vitalToggleLabel">Hide</span>
-          </button>
-        </div>
-        <div id="vitalContent" class="collapsible-content">
-          <div id="vitalSignList" class="vital-list-grid" style="margin-top:8px"></div>
-        </div>
-      </div>
-    </div>
+  <!-- MAIN TABLES GRID -->
+  <div id="tables"></div>
 
-    <div id="doneContainer" style="flex:1">
-      <div class="card">
-        <div class="collapsible-header">
-          <h2 class="section-title" style="margin:0">Done Numbers</h2>
-          <button id="doneToggleBtn" class="toggle-btn" onclick="toggleDone()" aria-expanded="true" title="Toggle Done list">
-            <span class="arrow">▾</span>
-            <span id="doneToggleLabel">Hide</span>
-          </button>
-        </div>
-        <div id="doneContent" class="collapsible-content">
-          <div id="doneNumbersList" class="done-list-grid" style="margin-top:8px"></div>
-        </div>
+  <!-- RIGHT PANEL: OWC -->
+  <div id="owcContainer">
+    <div class="card">
+      <div class="collapsible-header">
+        <h2 class="section-title" style="margin:0;font-size:1rem">OUT WHEN CALLED</h2>
+        <button id="owcToggleBtn" class="toggle-btn" onclick="toggleOWC()" aria-expanded="true" title="Toggle OWC list">
+          <span class="arrow">▾</span>
+          <span id="owcToggleLabel">Hide</span>
+        </button>
+      </div>
+      <div id="owcContent" class="collapsible-content">
+        <div id="owcList" class="owc-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- SETTINGS MODAL -->
-  <div id="modalOverlay">
-    <div id="modalBox">
-      <h2>Settings</h2>
-      <label style="display:block;margin-top:10px">Custom Prefixes (comma separated)</label>
-      <input id="prefixInput" type="text" style="width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc">
-<div class="settings-buttons">
-  <button onclick="savePrefix()" style="background:var(--primary);">SAVE PREFIXES</button>
-  <button onclick="resetQueues()" style="background:var(--danger);">RESET QUEUES & OWC</button>
-  <button onclick="changeTable()" style="background:#17a2b8;">CHANGE TABLE</button>
-
-  <button onclick="closeSettings()" style="background:var(--success);">CLOSE</button>
 </div>
 
+<!-- VITAL SIGN & DONE NUMBERS -->
+<div id="vitalAndDone">
+  <div id="vitalSignContainer">
+    <div class="card">
+      <div class="collapsible-header">
+        <h2 class="section-title" style="margin:0">Vital Sign List</h2>
+        <button id="vitalToggleBtn" class="toggle-btn" onclick="toggleVital()" aria-expanded="true" title="Toggle Vital Sign list">
+          <span class="arrow">▾</span>
+          <span id="vitalToggleLabel">Hide</span>
+        </button>
+      </div>
+      <div id="vitalContent" class="collapsible-content">
+        <div id="vitalSignList" class="vital-list-grid" style="margin-top:8px"></div>
       </div>
     </div>
   </div>
 
-  <div id="toastContainer"></div>
+  <div id="doneContainer" style="flex:1">
+    <div class="card">
+      <div class="collapsible-header">
+        <h2 class="section-title" style="margin:0">Done Numbers</h2>
+        <button id="doneToggleBtn" class="toggle-btn" onclick="toggleDone()" aria-expanded="true" title="Toggle Done list">
+          <span class="arrow">▾</span>
+          <span id="doneToggleLabel">Hide</span>
+        </button>
+      </div>
+      <div id="doneContent" class="collapsible-content">
+        <div id="doneNumbersList" class="done-list-grid" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="modalOverlay">
+  <div id="modalBox">
+    <h2>Settings</h2>
+    <label style="display:block;margin-top:10px">Custom Prefixes (comma separated)</label>
+    <input id="prefixInput" type="text" style="width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc">
+    <div class="settings-buttons">
+      <button onclick="savePrefix()" style="background:var(--primary);">SAVE PREFIXES</button>
+      <button onclick="resetQueues()" style="background:var(--danger);">RESET QUEUES & OWC</button>
+      <button onclick="changeTable()" style="background:#17a2b8;">CHANGE TABLE</button>
+      <button onclick="closeSettings()" style="background:var(--success);">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
 
 
 
@@ -372,7 +709,7 @@ button.common:not(:disabled):hover {
   const db = getDatabase(app);
 
   /* -------------------- STATE -------------------- */
-  const TOTAL_TABLES = 5;
+  const TOTAL_TABLES = 6;
   const MAX_VITAL_SIGN = 10;
   let selectedTable = localStorage.getItem("selectedTable") || null;
   let prefixes = [];
@@ -396,26 +733,26 @@ button.common:not(:disabled):hover {
   }
 
   /* -------------------- TABLE SELECTION UI -------------------- */
-  window.confirmTableSelection = function(){
-    const chosen = document.getElementById("tableSelectMenu").value;
-    if(!chosen){ toast("Please select a table."); return; }
-    selectedTable = (chosen === "all") ? "all" : parseInt(chosen);
-    localStorage.setItem("selectedTable", selectedTable);
-    applyTablePermissions();
-    document.getElementById("userMenuOverlay").style.display = "none";
-  };
-  window.changeTable = function(){
-    localStorage.removeItem("selectedTable");
-    document.getElementById("userMenuOverlay").style.display = "flex";
-    closeSettings();
-  };
+window.confirmTableSelection = function(){
+  const chosen = document.getElementById("tableSelectMenu").value;
+  if(!chosen){ toast("Please select a table."); return; }
+  selectedTable = (chosen === "all") ? "all" : parseInt(chosen);
+  localStorage.setItem("selectedTable", selectedTable);
+  applyTablePermissions();
+
+  // ✅ Re-render Done Numbers list
+  renderDoneList();
+
+  document.getElementById("userMenuOverlay").style.display = "none";
+};
+
 
 
 // Safe page load initializer
 window.addEventListener("load", () => {
   // Render tables first
   renderTables();
-
+ renderDoneList();
   // Force table selection on each refresh
   let selectedTable = null;
   const overlay = document.getElementById("userMenuOverlay");
@@ -487,38 +824,26 @@ window.addEventListener("load", () => {
 
   /* -------------------- RENDER TABLES -------------------- */
   function renderTables(){
-    let html = "";
-    for(let i=1;i<=TOTAL_TABLES;i++){
-     html += `<div class="table-box" id="tableBox${i}">
-  <h2 style="margin:0">Table ${i}</h2>
+  let html = "";
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const tableName = (i === 6) ? "Nurse Station" : `Table ${i}`;
+    html += `<div class="table-box" id="tableBox${i}">
+      <h2 style="margin:0">${tableName}</h2>
 
-  <select id="prefixSelect${i}" class="prefix-dropdown"></select>
-  <div id="num${i}" class="queue-number">0</div>
+      <select id="prefixSelect${i}" class="prefix-dropdown"></select>
+      <div id="num${i}" class="queue-number">${i===1 ? "0" : "-"}</div>
 
-  <div class="table-buttons">
-
-    ${i !== 1 ? 
-      `<button id="doneBtn${i}" class="common done-btn" onclick="doneQueue(${i})">DONE</button>` 
-      : ""
-    }
-
-    <button id="nextBtn${i}" class="common next-btn" onclick="nextQueue(${i})"
-      ${i !== 1 ? "disabled" : ""}>NEXT</button>
-
-    ${i !== 1 ?
-      `<button class="common owc-btn" onclick="owcQueue(${i})">OWC</button>`
-      : ""
-    }
-
-${i !== 1 ? `<button class="common recall-btn" onclick="recallQueue(${i})">RECALL</button>` : ""}
-
-
-  </div>
-</div>`;
-
-    }
-    document.getElementById("tables").innerHTML = html;
+      <div class="table-buttons">
+        ${i !== 1 ? `<button id="doneBtn${i}" class="common done-btn" onclick="doneQueue(${i})">DONE</button>` : ""}
+        <button id="nextBtn${i}" class="common next-btn" onclick="nextQueue(${i})" ${i !== 1 ? "" : ""}>NEXT</button>
+        ${i !== 1 ? `<button class="common owc-btn" onclick="owcQueue(${i})">OWC</button>` : ""}
+        ${i !== 1 ? `<button class="common recall-btn" onclick="recallQueue(${i})">RECALL</button>` : ""}
+      </div>
+    </div>`;
   }
+  document.getElementById("tables").innerHTML = html;
+}
+
   renderTables();
 
 window.toggleHeader = function() {
@@ -535,17 +860,32 @@ window.toggleHeader = function() {
 };
 
 
-  /* -------------------- APPLY TABLE PERMISSIONS -------------------- */
-  function applyTablePermissions(){
-    const vitalContainer = document.getElementById("vitalSignContainer");
-    for(let i=1;i<=TOTAL_TABLES;i++){
-      const box = document.getElementById("tableBox"+i);
-      if(selectedTable === "all" || i === selectedTable) box.style.display = "block";
-      else box.style.display = "none";
-    }
-    if(selectedTable === 1 || selectedTable === "all") vitalContainer.style.display = "block";
-    else vitalContainer.style.display = "none";
+/* -------------------- APPLY TABLE PERMISSIONS -------------------- */
+function applyTablePermissions() {
+  const vitalContainer = document.getElementById("vitalSignContainer");
+  const historyContainer = document.getElementById("historyContainer"); // <--- History Done
+  for (let i = 1; i <= TOTAL_TABLES; i++) {
+    const box = document.getElementById("tableBox" + i);
+    if (selectedTable === "all" || i === selectedTable) box.style.display = "block";
+    else box.style.display = "none";
   }
+
+  // Vital Sign list only visible for Table 1 or all
+  if (selectedTable === 1 || selectedTable === "all") {
+    vitalContainer.style.display = "block";
+  } else {
+    vitalContainer.style.display = "none";
+  }
+
+  // History Done list only visible for Nurse Station (Table 6) or all
+  if (selectedTable === 6 || selectedTable === "all") {
+    historyContainer.style.display = "block";
+  } else {
+    historyContainer.style.display = "none";
+  }
+}
+
+
 
   /* -------------------- PREFIXES (Firebase) -------------------- */
   onValue(ref(db,"settings/prefixes"), snap=>{
@@ -639,19 +979,27 @@ window.doneQueue = function(i){
   const el = document.getElementById("num"+i);
   const num = el.textContent;
   if(num && num !== "0" && num !== "-"){
+
     if(i === 1){
       table1DoneNumbers.push(num);
       sortTable1DoneNumbers();
       renderDoneList();
+    } else {
+      // Push to historyDone
+      push(ref(db,"historyDone"), {
+        number: num,
+        table: i,
+        timestamp: Date.now()
+      });
     }
+
   }
   el.textContent = "-";
   set(ref(db,"tableNumbers/table"+i), "-");
 
   const nextBtn = document.getElementById("nextBtn"+i);
   if(nextBtn) nextBtn.disabled = false;  // enable NEXT
-  // ✅ Do NOT disable Recall
-updateTableButtons(i);
+  updateTableButtons(i);
   highlightTable(i);
 };
 
@@ -842,23 +1190,125 @@ buttonGroup.appendChild(recallBtn);
     Object.values(snap.val()).forEach(v => renderVitalSignList(v.number));
   });
 
-  /* -------------------- DONE LIST -------------------- */
-  function renderDoneList(){
-    const box = document.getElementById("doneNumbersList");
-    box.innerHTML = "";
-    const usedInTables = new Set();
-    for(let i=2;i<=TOTAL_TABLES;i++){ const val=document.getElementById("num"+i).textContent; if(val!=="0" && val!=="-") usedInTables.add(val); }
-
-    table1DoneNumbers.forEach(n=>{
-      if(!usedInTables.has(n)){
-        const div = document.createElement("div");
-        div.className = "done-number";
-        div.textContent = n;
-        box.appendChild(div);
-      }
-    });
-    set(ref(db,"table1DoneNumbers"), table1DoneNumbers);
+// Reactive selectedTable so that changing it rerenders done list
+let _selectedTable = 1; // default
+Object.defineProperty(window, "selectedTable", {
+  get() {
+    return _selectedTable;
+  },
+  set(value) {
+    _selectedTable = value;
+    renderDoneList(); // automatically rerender when selection changes
   }
+});
+
+function renderDoneList() {
+  const box = document.getElementById("doneNumbersList");
+  if (!box) return;
+  box.innerHTML = ""; // Clear old list
+
+  // Mapping of table numbers to names
+  const tableNames = {
+    1: "Table 1",
+    2: "Table 2",
+    3: "Table 3",
+    4: "Table 4",
+    5: "Table 5",
+    6: "Nurse Station"
+  };
+
+  // Find numbers already used in tables 2..TOTAL_TABLES
+  const usedInTables = new Set();
+  for (let i = 2; i <= TOTAL_TABLES; i++) {
+    const val = document.getElementById("num" + i)?.textContent;
+    if (val !== "0" && val !== "-") usedInTables.add(val);
+  }
+
+  // Loop through done numbers
+  table1DoneNumbers.forEach((n) => {
+    if (!usedInTables.has(n)) {
+      const div = document.createElement("div");
+      div.className = "done-number";
+
+      const left = document.createElement("div");
+      left.textContent = n;
+
+      const rightControls = document.createElement("div");
+      rightControls.style.display = "flex";
+      rightControls.style.gap = "6px";
+      rightControls.style.alignItems = "center";
+
+      // Only show dropdown + restore button for Nurse Station or "all"
+      if (selectedTable === 6 || selectedTable === "all") {
+       const tableSelect = document.createElement("select");
+tableSelect.className = "restore-select";
+
+// Add all tables to dropdown
+for (const [id, name] of Object.entries(tableNames)) {
+  const opt = document.createElement("option");
+  opt.value = id;
+  opt.textContent = name;
+  tableSelect.appendChild(opt);
+}
+
+// Default selected table
+tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
+
+
+        const restoreBtn = document.createElement("button");
+        restoreBtn.className = "list-action-btn";
+        restoreBtn.style.background = "var(--success)";
+        restoreBtn.style.color = "#fff";
+        restoreBtn.textContent = "✅";
+        restoreBtn.title = "Restore to selected table";
+
+        restoreBtn.onclick = () => {
+          const chosenTable = parseInt(tableSelect.value);
+          const el = document.getElementById("num" + chosenTable);
+
+      if (chosenTable === 1) {
+    addToVitalSignList(n);
+    set(ref(db, "tableNumbers/table1"), n);
+    document.getElementById("num1").textContent = n;
+    updateTableButtons(1);
+
+    // ✅ Remove from Done Numbers and refresh UI
+    table1DoneNumbers = table1DoneNumbers.filter(x => x !== n);
+    renderDoneList();
+}
+ else{
+            if (el.textContent !== "0" && el.textContent !== "-") {
+              toast(`Cannot restore: Table ${chosenTable} already has ${el.textContent}`);
+              return;
+            }
+            el.textContent = n;
+            usedNumbers.add(n);
+            table1DoneNumbers = table1DoneNumbers.filter(x => x !== n);
+            sortTable1DoneNumbers();
+            set(ref(db, "tableNumbers/table" + chosenTable), n);
+            renderDoneList(); // refresh after restore
+            const nextBtn = document.getElementById("nextBtn" + chosenTable);
+            if (nextBtn) nextBtn.disabled = true;
+            updateTableButtons(chosenTable);
+          }
+
+          pulseTable(chosenTable, "yellow");
+          highlightTable(chosenTable);
+        };
+
+        rightControls.appendChild(tableSelect);
+        rightControls.appendChild(restoreBtn);
+      }
+
+      div.appendChild(left);
+      div.appendChild(rightControls);
+      box.appendChild(div);
+    }
+  });
+}
+
+
+
 
   /* -------------------- OWC LIST -------------------- */
   onValue(ref(db,"owc"), snap => {
@@ -891,12 +1341,14 @@ buttonGroup.appendChild(recallBtn);
 
     const tableSelect = document.createElement("select");
     tableSelect.className = "restore-select";
-    for (let i = 1; i <= TOTAL_TABLES; i++) {
-      const opt = document.createElement("option");
-      opt.value = i;
-      opt.textContent = `Table ${i}`;
-      tableSelect.appendChild(opt);
-    }
+  // In OWC restore select, include table 6
+for (let i = 1; i <= TOTAL_TABLES; i++) {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = (i===6) ? "Nurse Station" : `Table ${i}`;
+  tableSelect.appendChild(opt);
+}
+
     tableSelect.value = v.table;
 
     const restoreBtn = document.createElement("button");
@@ -962,19 +1414,41 @@ buttonGroup.appendChild(recallBtn);
   window.showSettings = ()=>{ document.getElementById("modalOverlay").style.display = "flex"; }
   window.closeSettings = ()=>{ document.getElementById("modalOverlay").style.display = "none"; }
   window.savePrefix = ()=>{ const p = document.getElementById("prefixInput").value.split(",").map(s=>s.trim()).filter(Boolean); set(ref(db,"settings/prefixes"), p); toast("Prefixes saved"); }
-  window.resetQueues = ()=>{
-    if(!confirm("Reset all queues & OWC?")) return;
-    for(let i=1;i<=TOTAL_TABLES;i++){ document.getElementById("num"+i).textContent = "0"; set(ref(db,"tableNumbers/table"+i), "0"); const nextBtn=document.getElementById("nextBtn"+i); if(nextBtn) nextBtn.disabled = (i!==1); }
-    document.getElementById("vitalSignList").innerHTML = "";
-    table1DoneNumbers = [];
-    usedNumbers.clear();
-    seriesByPrefix = {};
-    remove(ref(db,"owc"));
-    remove(ref(db,"vitalSignList"));
-    set(ref(db,"prefixSeries"), {});
-    renderDoneList();
-    toast("Queues reset");
-  };
+ window.resetQueues = async () => {
+  if (!confirm("Reset all queues & OWC?")) return;
+
+  for (let i = 1; i <= TOTAL_TABLES; i++) {
+    document.getElementById("num" + i).textContent = "0";
+    await set(ref(db, "tableNumbers/table" + i), "0");
+    const nextBtn = document.getElementById("nextBtn" + i);
+    if (nextBtn) nextBtn.disabled = (i !== 1);
+  }
+
+  document.getElementById("vitalSignList").innerHTML = "";
+
+  // Clear local arrays
+  table1DoneNumbers = [];
+  usedNumbers.clear();
+  seriesByPrefix = {};
+
+  // Remove OWC
+  await remove(ref(db, "owc"));
+
+  // Remove Vital Sign List in Firebase
+  await remove(ref(db, "vitalSignList"));
+
+  // Remove History Done List
+  await remove(ref(db, "historyDone"));
+
+  // Reset prefix series
+  await set(ref(db, "prefixSeries"), {});
+
+  // Render Done Numbers again
+  renderDoneList();
+
+  toast("Queues reset");
+};
+
 
   /* -------------------- UTILITIES -------------------- */
   function createButton(label, bgColor, onClick, width="40px", height="35px"){
@@ -1072,6 +1546,118 @@ window.addEventListener("load", ()=>{
       setCollapsedUI(k, collapsed);
     });
   })();
+
+onValue(ref(db, "tableNumbers/table6"), snap => {
+  const val = snap.exists() ? snap.val() : "-";
+  document.getElementById("num6").textContent = val;
+  updateTableButtons(6);
+});
+
+window.toggleHistory = function(){
+    const content = document.getElementById("historyContent");
+    const btn = document.getElementById("historyToggleBtn");
+    const label = document.getElementById("historyToggleLabel");
+    const collapsed = content.classList.contains("collapsed");
+    if(collapsed){
+      content.classList.remove("collapsed");
+      btn.classList.remove("collapsed");
+      btn.setAttribute("aria-expanded","true");
+      label.textContent = "Hide";
+    } else {
+      content.classList.add("collapsed");
+      btn.classList.add("collapsed");
+      btn.setAttribute("aria-expanded","false");
+      label.textContent = "Show";
+    }
+  };
+
+  // FIREBASE SYNC HISTORY DONE
+ onValue(ref(db,"historyDone"), snap=>{
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  if(!snap.exists()) return;
+
+  const historyArray = Object.entries(snap.val());
+
+  // Sort by prefix & number
+  historyArray.sort((a,b)=>{
+    const [pA,nA] = a[1].number.split("-");
+    const [pB,nB] = b[1].number.split("-");
+    if(pA !== pB) return pA.localeCompare(pB);
+    return parseInt(nA,10)-parseInt(nB,10);
+  });
+
+  historyArray.forEach(([key, v])=>{
+    const div = document.createElement("div");
+    div.className = "owc-item";
+
+    // LEFT: only show the number (remove Table info)
+    const left = document.createElement("div");
+    left.textContent = v.number;  // <-- removed "(from Table #)"
+
+    const rightControls = document.createElement("div");
+    rightControls.style.display = "flex";
+    rightControls.style.gap = "6px";
+    rightControls.style.alignItems = "center";
+
+    const tableSelect = document.createElement("select");
+    tableSelect.className = "restore-select";
+    for(let i=1;i<=TOTAL_TABLES;i++){
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = (i===6) ? "Nurse Station" : `Table ${i}`;
+      tableSelect.appendChild(opt);
+    }
+    tableSelect.value = v.table;
+
+    const restoreBtn = document.createElement("button");
+    restoreBtn.className = "list-action-btn";
+    restoreBtn.style.background = "var(--success)";
+    restoreBtn.style.color = "#fff";
+    restoreBtn.textContent = "✅";
+    restoreBtn.title = "Restore to selected table";
+    restoreBtn.onclick = ()=>{
+      const chosenTable = parseInt(tableSelect.value);
+      const numToRestore = v.number;
+
+      const el = document.getElementById("num"+chosenTable);
+      if(chosenTable !== 1 && el.textContent !== "0" && el.textContent !== "-"){
+        toast(`Table ${chosenTable} already has ${el.textContent}`);
+        return;
+      }
+
+      if(chosenTable === 1){
+        const vitalList = document.getElementById("vitalSignList");
+        if(vitalList.children.length >= MAX_VITAL_SIGN){
+          toast("Vital Sign Area full");
+          return;
+        }
+        addToVitalSignList(numToRestore);
+        set(ref(db,"tableNumbers/table1"), numToRestore);
+        document.getElementById("num1").textContent = numToRestore;
+      } else {
+        el.textContent = numToRestore;
+        set(ref(db,"tableNumbers/table"+chosenTable), numToRestore);
+      }
+
+      pulseTable(chosenTable,"yellow");
+      highlightTable(chosenTable);
+
+      remove(ref(db,"historyDone/"+key));
+    };
+
+    rightControls.appendChild(tableSelect);
+    rightControls.appendChild(restoreBtn);
+
+    div.appendChild(left);
+    div.appendChild(rightControls);
+    list.appendChild(div);
+  });
+});
+window.changeTable = function() {
+  document.getElementById("modalOverlay").style.display = "none"; // close settings modal
+  document.getElementById("userMenuOverlay").style.display = "flex"; // show table selection
+};
 
   /* -------------------- END -------------------- */
 </script>
