@@ -79,10 +79,39 @@
   #headerClock { font-size:1.2em; }
 }
   /* --------- MAIN LAYOUT --------- */
-  #mainContainer { display:flex; flex-direction:column; gap:10px; padding:10px 20px; flex:1 1 auto; overflow:hidden; }
-  #gridsContainer { display:flex; gap:10px; flex:1; overflow:hidden; }
-  #leftPanel { flex:1.5; display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
-  #centerPanel { flex:2; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr 1fr; gap:10px; }
+  #mainContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 20px;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+#gridsContainer {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 auto; /* allow to shrink */
+  overflow: hidden;
+}
+
+#leftPanel {
+  flex: 1.5 1 0; /* allow shrinking */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto; /* scroll if too tall */
+}
+
+#centerPanel {
+  flex: 2 1 0; /* allow shrinking */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr 1fr auto; /* last row for Table 6 (Nurse Station) */
+  gap: 10px;
+  overflow: hidden;
+}
+
 
   .area-header { font-size:2em; font-weight:700; text-align:center; border-radius:25px; padding:15px; color:#fff; box-shadow:0 8px 25px rgba(0,0,0,0.08); }
 .table-box {
@@ -122,7 +151,15 @@
   box-sizing: border-box;
   font-size: clamp(2rem, 8vw, 4rem); /* scales with screen width */
 }
-
+#centerPanel .table-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-height: 120px;
+  max-height: 100%;
+}
 /* Consultation Tables (Tables 2-5) */
 .queue-number-consult {
   display: flex;
@@ -155,17 +192,76 @@
   100% { box-shadow: 0 0 35px rgba(0,123,255,0.8); transform:scale(1); }
 }
 
+/* OWC PANEL AT BOTTOM */
+#owcContainer {
+  background: rgba(245,245,245,0.55);
+  backdrop-filter: blur(8px);
+  border-radius: 25px;
+  padding: 10px 20px 20px 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  transition: opacity 0.35s ease, max-height 0.4s ease, transform 0.35s ease;
+  max-height: 0;      /* collapsed initially */
+  opacity: 0;
+  transform: translateY(-12px) scale(0.995);
+  pointer-events: none;
+  flex-shrink: 0;     /* ensures it takes space but doesn’t shrink */
+}
 
-  #owcContainer {
-    background:rgba(245,245,245,0.55); backdrop-filter:blur(8px); border-radius:25px; padding:20px;
-    flex:0 0 auto; overflow:hidden; box-shadow:0 8px 25px rgba(0,0,0,0.08); margin-top:10px;
-    transition:opacity .35s ease, max-height .4s ease, transform .35s ease; max-height:0; opacity:0; transform:translateY(-12px) scale(.995); pointer-events:none;
-  }
-  #owcContainer.visible { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
-  #owcContainer.hidden { opacity:0; transform:translateY(-12px) scale(.995); pointer-events:none; }
-  #owcContainer h2 { font-size:2em; margin-bottom:20px; color:#d9534f; text-align:center; }
-  #owcList { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; align-items:start; }
-  .owc-item { font-size:1.6em; padding:12px; border-radius:15px; background:rgba(217,83,79,0.85); text-align:center; font-weight:700; color:#fff; animation:pulse 1.5s infinite; opacity:0; transform:translateY(8px); }
+#owcContainer.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  max-height: 500px; /* adjust if more rows needed */
+}
+
+#owcContainer.hidden {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.995);
+  pointer-events: none;
+  max-height: 0;
+}
+
+#owcContainer h2 {
+  font-size: 2em;
+  margin: 0 0 10px 0;
+  color: #d9534f;
+  text-align: center;
+}
+
+#owcList {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.owc-item {
+  font-size: 1.6em;
+  padding: 12px;
+  border-radius: 15px;
+  background: rgba(217,83,79,0.85);
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  animation: pulse 1.5s infinite;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 10px rgba(217,83,79,0.7);}
+  50% { box-shadow: 0 0 25px rgba(217,83,79,0.7);}
+  100% { box-shadow: 0 0 10px rgba(217,83,79,0.7);}
+}
+
+/* Responsive adjustments */
+@media (max-width:1200px){ 
+  #owcList{grid-template-columns:repeat(3,1fr);} 
+}
+@media (max-width:700px){ 
+  #owcList{grid-template-columns:repeat(2,1fr);} 
+}
   @keyframes pulse { 0% { box-shadow:0 0 10px rgba(217,83,79,0.7);} 50% { box-shadow:0 0 25px rgba(217,83,79,0.7);} 100% { box-shadow:0 0 10px rgba(217,83,79,0.7);} }
 
   #startOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; z-index:1000; }
@@ -196,8 +292,9 @@
   justify-content: center;
   align-items: center;
 }
-
-
+#table6Box {
+  grid-column: 1 / 3; /* span full width */
+}
 </style>
 </head>
 <body>
@@ -218,7 +315,8 @@
   <button id="startBtn">Start Dashboard</button>
 </div>
 
-<div id="mainContainer" style="display:none;">
+<!-- -------- MAIN DASHBOARD -------- -->
+<div id="mainContainer" style="display:none; flex-direction: column;">
   <div id="gridsContainer">
     <div id="leftPanel">
       <div class="area-header" style="background:#007bff;">VITAL SIGN AREA</div>
@@ -227,20 +325,41 @@
         <div id="num1List"></div>
       </div>
     </div>
+
     <div id="centerPanel">
       <div class="area-header" style="grid-column:1/3;text-align:center;background:#28a745;">CONSULTATION AREA</div>
-      <div class="table-box"><div class="title">Table 2</div><div class="queue-number-consult" id="num2">0</div></div>
-      <div class="table-box"><div class="title">Table 3</div><div class="queue-number-consult" id="num3">0</div></div>
-      <div class="table-box"><div class="title">Table 4</div><div class="queue-number-consult" id="num4">0</div></div>
-      <div class="table-box"><div class="title">Table 5</div><div class="queue-number-consult" id="num5">0</div></div>
+      
+      <div class="table-box">
+        <div class="title">Table 2</div>
+        <div class="queue-number-consult" id="num2">0</div>
+      </div>
+      <div class="table-box">
+        <div class="title">Table 3</div>
+        <div class="queue-number-consult" id="num3">0</div>
+      </div>
+      
+      <div class="table-box">
+        <div class="title">Table 4</div>
+        <div class="queue-number-consult" id="num4">0</div>
+      </div>
+      <div class="table-box">
+        <div class="title">Table 5</div>
+        <div class="queue-number-consult" id="num5">0</div>
+      </div>
+
+      <div class="table-box" id="table6Box" style="grid-column:1/3;">
+        <div class="title">Nurse Station</div>
+        <div class="queue-number-consult" id="num6">0</div>
+      </div>
     </div>
   </div>
-  <div id="owcContainer" class="hidden">
+
+  <!-- -------- OWC PANEL AT BOTTOM -------- -->
+  <div id="owcContainer" class="hidden" style="flex-shrink:0;">
     <h2>OUT WHEN CALLED</h2>
     <div id="owcList"></div>
   </div>
 </div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
@@ -278,28 +397,48 @@ function getRandomVoice() { if(!voices.length) return null; return voices[Math.f
 
 const speechQueue = [];
 let isSpeaking = false;
-function speakQueuedNumber(num, table, action="Now serving"){
-  speechQueue.push({num,table,action});
+function speakQueuedNumber(num, table, action = "Now serving") {
+  if(!num) return;
+
+  speechQueue.push({ num, table, action });
   if(!isSpeaking) processSpeechQueue();
 }
-function processSpeechQueue(){
-  if(speechQueue.length===0){ isSpeaking=false; return; }
-  isSpeaking=true;
-  const {num,table,action} = speechQueue.shift();
-  if(!num) return processSpeechQueue();
-  const [prefix,numStr] = (num||"").split("-");
+
+function processSpeechQueue() {
+  if(speechQueue.length === 0) {
+    isSpeaking = false;
+    return;
+  }
+
+  isSpeaking = true;
+  const { num, table, action } = speechQueue.shift();
+
+  const [prefix, numStr] = (num || "").split("-");
   const spokenPrefix = prefix && prefix.toUpperCase() === "PP" ? "PEDIA-PENADUR" : prefix;
-  const number = parseInt(numStr||0,10) || numStr || num;
-  const area = table===1?"Vital Sign Area":"Consultation Area";
+  const number = parseInt(numStr || 0, 10) || numStr || num;
+
+  // Determine area and table text
+  let area = "";
+  let tableText = "";
+  if(table === 1) area = "Vital Sign Area";
+  else if(table >= 2 && table <= 5) area = "Consultation Area";
+  else if(table === 6) area = "Nurse Station";
+
+  tableText = (table === 6) ? "" : `table ${table}`;
+
   const text = action 
-    ? `${action}, ${spokenPrefix?spokenPrefix+' ':''}number ${number}. Please proceed to Pediatric Clinic Room 209 ${area} table ${table}.` 
+    ? `${action}, ${spokenPrefix ? spokenPrefix + ' ' : ''}number ${number}. Please proceed to Pediatric Clinic Room 209 ${area} ${tableText}`.trim()
     : num;
+
   const utter = new SpeechSynthesisUtterance(text);
-  utter.rate=1; utter.pitch=1;
+  utter.rate = 1;
+  utter.pitch = 1;
   if(voices.length) utter.voice = getRandomVoice();
+
   const beep = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=");
-  beep.play().then(()=>{ window.speechSynthesis.speak(utter); }).catch(()=>{ window.speechSynthesis.speak(utter); });
-  utter.onend = ()=>processSpeechQueue();
+  beep.play().then(() => { window.speechSynthesis.speak(utter); }).catch(() => { window.speechSynthesis.speak(utter); });
+
+  utter.onend = () => processSpeechQueue();
 }
 
 /* ---------- ANNOUNCE TRACKING ---------- */
@@ -324,9 +463,13 @@ function updateVitalDisplayed(numbers){ numbers.forEach(n=>vitalDisplayed.add(n)
 /* ---------- VITAL SIGN TABLE 1 ---------- */
 function loadVitalSignList() {
   const num1List = document.getElementById('num1List');
-  const announcedNumbers = new Set();
+  
   onValue(ref(db, "vitalSignList"), snap => {
-    if (!snap.exists()) return;
+    if (!snap.exists()) { 
+      num1List.innerHTML = ""; 
+      return; 
+    }
+
     const data = snap.val() || {};
     const entries = Object.entries(data)
       .filter(([_, e]) => e && e.number && e.number !== "-" && e.number.trim() !== "")
@@ -337,8 +480,10 @@ function loadVitalSignList() {
         return (pA || "").localeCompare(pB || "");
       })
       .slice(0, 10);
-    if (entries.length === 0) return;
+
+    // Remove all current DOM items
     num1List.innerHTML = "";
+
     entries.forEach(([key, e]) => {
       const number = e.number || "";
       const div = document.createElement("div");
@@ -347,71 +492,191 @@ function loadVitalSignList() {
       const [prefix] = number.split("-");
       div.style.background = prefix && prefix.toUpperCase() === "VIP" ? "#ff9800" : "#007bff";
       num1List.appendChild(div);
-      if (!announcedNumbers.has(number)) {
-        announcedNumbers.add(number);
+
+      // Animate and speak only if it hasn't been displayed
+      if (!vitalDisplayed.has(number)) {
+        vitalDisplayed.add(number); // add to memory
         speakQueuedNumber(number, 1, "Now serving");
         requestAnimationFrame(() => { div.classList.add("pulse"); setTimeout(() => div.classList.remove("pulse"), 1000); });
       }
     });
+
+    // Clean localStorage: remove numbers no longer present
+    const currentNumbers = entries.map(([_, e]) => e.number);
+    vitalDisplayed = new Set(currentNumbers);
+    localStorage.setItem('vitalDisplayed', JSON.stringify([...vitalDisplayed]));
   });
 }
 
 /* ---------- TABLES 2-5 ---------- */
-function loadTables(){
-  [2,3,4,5].forEach(i=>{
+function loadTables() {
+  // Persisted memory: last valid numbers for Tables 2-5, and last nurse number
+  const lastValidNumbers = JSON.parse(localStorage.getItem('lastValidNumbers') || '{}');
+  // ensure keys exist
+  [2,3,4,5].forEach(i => { if (!lastValidNumbers[i]) lastValidNumbers[i] = ""; });
+
+  let lastNurseNumber = localStorage.getItem('lastNurseNumber') || "";
+
+  // Track what is currently shown on screen to avoid unnecessary DOM updates/announcements
+  const lastShown = JSON.parse(localStorage.getItem('lastShownTables') || '{}');
+
+  [2,3,4,5,6].forEach(i => {
     const numEl = document.getElementById(`num${i}`);
-    let lastKnown = localStorage.getItem(`table${i}`)||"";
-    if(lastKnown){ numEl.textContent=lastKnown; numEl.style.background=tableColors[i]; numEl.style.color="#fff"; }
-    onValue(ref(db, `tableNumbers/table${i}`), snap=>{
-      const val = snap.val();
-      if(val===null||val===undefined||val===""||val==="-") return;
-      if(val===lastKnown) return;
-      numEl.textContent=val; lastKnown=val; localStorage.setItem(`table${i}`,val);
-      numEl.style.background=tableColors[i]; numEl.style.color="#fff";
-      // Remove explicit font-size — CSS handles it automatically
-numEl.style.fontSize = ""; // reset to CSS-defined clamp
+    const tableBox = document.getElementById(`table${i}Box`);
+    if (!numEl) return; // safety
 
+    onValue(ref(db, `tableNumbers/table${i}`), snap => {
+      let dbVal = snap.val();
 
+      // If DB has nothing meaningful, do nothing.
+      if (dbVal === null || dbVal === undefined || dbVal === "") return;
 
-      if(shouldAnnounce(val,i)){ speakQueuedNumber(val,i,"Now serving"); numEl.classList.add("pulse"); setTimeout(()=>numEl.classList.remove("pulse"),1000);}
+      // Normalize string values
+      dbVal = String(dbVal).trim();
 
-const resizeFont = (el) => {
-  let fontSize = parseInt(window.getComputedStyle(el).fontSize);
-  while (el.scrollWidth > el.clientWidth && fontSize > 10) {
-    fontSize -= 1;
-    el.style.fontSize = fontSize + "px";
-  }
-};
-resizeFont(numEl);
+      // For Tables 2-5: determine displayValue and update lastValidNumbers if needed
+      let displayValue = dbVal;
+      if (i >= 2 && i <= 5) {
+        if (dbVal === "-" || dbVal === "0") {
+          // Use last valid if available, otherwise keep dash
+          displayValue = lastValidNumbers[i] || "-";
+        } else {
+          // DB provided a valid number -> update last valid
+          lastValidNumbers[i] = dbVal;
+          localStorage.setItem('lastValidNumbers', JSON.stringify(lastValidNumbers));
+          displayValue = dbVal;
+        }
+      }
 
+      // For Table 6: hide if "-" or "0"; otherwise show the DB value
+      if (i === 6) {
+        if (dbVal === "-" || dbVal === "0") {
+          // hide nurse station box
+          if (tableBox) tableBox.style.display = "none";
+          // Do not announce or change lastNurseNumber here
+          // Keep the display as whatever it was before (no forced change)
+          // Also clear shown value to avoid stale "0" being shown if box becomes visible later
+          if (lastShown[i] && lastShown[i] !== "") {
+            // we intentionally leave lastShown as-is; we'll update when a valid number arrives
+          }
+        } else {
+          // show nurse station
+          if (tableBox) tableBox.style.display = "flex";
+
+          // Announce only if this is a new nurse number (DB gave a valid number)
+          if (dbVal !== lastNurseNumber && shouldAnnounce(dbVal, i)) {
+            // Use unified speech format (Now serving/Now recalling handled by caller)
+            speakQueuedNumber(dbVal, i, "Now serving");
+            numEl.classList.add("pulse");
+            setTimeout(() => numEl.classList.remove("pulse"), 1000);
+
+            lastNurseNumber = dbVal;
+            localStorage.setItem('lastNurseNumber', lastNurseNumber);
+          }
+
+          // Update display value for nurse station (we want the actual dbVal)
+          displayValue = dbVal;
+        }
+      }
+
+      // If displayValue is unchanged from what we are already showing, do nothing
+      if (lastShown[i] === displayValue) {
+        return;
+      }
+
+      // Update the visible text (for Table 6 if hidden, we still set text when it becomes visible)
+      numEl.textContent = displayValue;
+      // update styles
+      numEl.style.background = tableColors[i] || "#28a745";
+      numEl.style.color = "#fff";
+
+      // Announce for Tables 2-5: only announce when the DB provided a valid new number (not when DB sent '-'/'0')
+      if (i >= 2 && i <= 5) {
+        // We should announce only if DB val is valid and it's a change
+        if (dbVal !== "-" && dbVal !== "0" && shouldAnnounce(dbVal, i)) {
+          speakQueuedNumber(dbVal, i, "Now serving");
+          numEl.classList.add("pulse");
+          setTimeout(() => numEl.classList.remove("pulse"), 1000);
+        }
+      }
+
+      // Save shown state
+      lastShown[i] = displayValue;
+      localStorage.setItem('lastShownTables', JSON.stringify(lastShown));
     });
   });
 }
 
-/* ---------- OWC LIST ---------- */
+function updateOWCVisibility() {
+  const table6Value = document.getElementById('num6').textContent.trim();
+  const owcContainer = document.getElementById('owcContainer');
+
+  // Hide OWC only if Table 6 has a valid number
+  if(table6Value !== "0" && table6Value !== "-"){
+    owcContainer.classList.remove('visible');
+    owcContainer.classList.add('hidden');
+    owcContainer.style.maxHeight = "0px";
+    return false;
+  }
+  return true; // Table 6 empty, OWC can show
+}
+
 function loadOWCList(){
-  const owcContainer=document.getElementById('owcContainer');
-  const owcList=document.getElementById('owcList');
-  onValue(ref(db,"owc"), snap=>{
-    owcList.innerHTML='';
-    if(!snap.exists()){ owcContainer.classList.add('hidden'); owcContainer.classList.remove('visible'); owcContainer.style.maxHeight="0px"; return; }
-    const values=Object.values(snap.val()||{});
-    const sorted=values.sort((a,b)=>{
-      const [pA,nA]=(a.number||"").split("-");
-      const [pB,nB]=(b.number||"").split("-");
+  const owcContainer = document.getElementById('owcContainer');
+  const owcList = document.getElementById('owcList');
+
+  onValue(ref(db,"owc"), snap => {
+    owcList.innerHTML = '';
+
+    const canShow = updateOWCVisibility(); // check Table 6
+
+    if(!snap.exists() || !canShow){ 
+      owcContainer.classList.remove('visible');
+      owcContainer.classList.add('hidden');
+      owcContainer.style.maxHeight = "0px";
+      return; 
+    }
+
+    const values = Object.values(snap.val() || {});
+    const sorted = values.sort((a,b)=>{
+      const [pA,nA] = (a.number||"").split("-");
+      const [pB,nB] = (b.number||"").split("-");
       if(pA===pB) return parseInt(nA||0)-parseInt(nB||0);
       return (pA||"").localeCompare(pB||"");
     });
-    sorted.forEach(e=>{
-      const div=document.createElement('div'); div.className='owc-item';
-     div.textContent = `${e.number}`;
- owcList.appendChild(div);
-      requestAnimationFrame(()=>{ div.style.transition="opacity .28s ease, transform .28s ease"; div.style.opacity=1; div.style.transform="translateY(0)"; });
+
+    sorted.forEach(e => {
+      const div = document.createElement('div');
+      div.className='owc-item';
+      div.textContent = `${e.number}`;
+      owcList.appendChild(div);
+
+      requestAnimationFrame(()=>{ 
+        div.style.transition="opacity .28s ease, transform .28s ease"; 
+        div.style.opacity=1; 
+        div.style.transform="translateY(0)"; 
+      });
     });
-    if(sorted.length>0){ owcContainer.classList.remove('hidden'); owcContainer.classList.add('visible'); requestAnimationFrame(()=>{ owcContainer.style.maxHeight = owcContainer.scrollHeight + "px"; }); }
-    else{ owcContainer.classList.remove('visible'); owcContainer.classList.add('hidden'); owcContainer.style.maxHeight="0px"; }
+
+    // Show OWC
+    if(sorted.length > 0){
+      owcContainer.classList.remove('hidden');
+      owcContainer.classList.add('visible');
+      requestAnimationFrame(()=>{ owcContainer.style.maxHeight = owcContainer.scrollHeight + "px"; });
+    } else {
+      owcContainer.classList.remove('visible');
+      owcContainer.classList.add('hidden');
+      owcContainer.style.maxHeight = "0px";
+    }
+  });
+
+  // Also dynamically hide/show OWC if Table 6 changes
+  onValue(ref(db, `tableNumbers/table6`), snap => {
+    updateOWCVisibility();
   });
 }
+
+
 
 /* ---------- RECALL EVENTS ---------- */
 onValue(ref(db,"recallEvents"), snap=>{
@@ -444,8 +709,6 @@ function fitNumber(el) {
     el.style.fontSize = fontSize + "px";
   }
 }
-fitNumber(numEl);
-
 </script>
 </body>
 </html>
