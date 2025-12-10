@@ -510,97 +510,56 @@ function loadVitalSignList() {
 
 /* ---------- TABLES 2-5 ---------- */
 function loadTables() {
-  // Persisted memory: last valid numbers for Tables 2-5, and last nurse number
+  // Persisted memory: last valid numbers for Tables 2-6
   const lastValidNumbers = JSON.parse(localStorage.getItem('lastValidNumbers') || '{}');
-  // ensure keys exist
-  [2,3,4,5].forEach(i => { if (!lastValidNumbers[i]) lastValidNumbers[i] = ""; });
+  [2,3,4,5,6].forEach(i => { if (!lastValidNumbers[i]) lastValidNumbers[i] = ""; });
 
-  let lastNurseNumber = localStorage.getItem('lastNurseNumber') || "";
+  // Track last announced numbers to avoid duplicate announcements
+  const lastAnnounced = JSON.parse(localStorage.getItem('lastAnnounced') || '{}');
+  [2,3,4,5,6].forEach(i => { if (!lastAnnounced[i]) lastAnnounced[i] = ""; });
 
-  // Track what is currently shown on screen to avoid unnecessary DOM updates/announcements
+  // Track currently shown numbers
   const lastShown = JSON.parse(localStorage.getItem('lastShownTables') || '{}');
 
   [2,3,4,5,6].forEach(i => {
     const numEl = document.getElementById(`num${i}`);
     const tableBox = document.getElementById(`table${i}Box`);
-    if (!numEl) return; // safety
+    if (!numEl) return;
 
     onValue(ref(db, `tableNumbers/table${i}`), snap => {
       let dbVal = snap.val();
+      if (dbVal === null || dbVal === undefined) return;
 
-      // If DB has nothing meaningful, do nothing.
-      if (dbVal === null || dbVal === undefined || dbVal === "") return;
-
-      // Normalize string values
       dbVal = String(dbVal).trim();
 
-      // For Tables 2-5: determine displayValue and update lastValidNumbers if needed
-      let displayValue = dbVal;
-      if (i >= 2 && i <= 5) {
-        if (dbVal === "-" || dbVal === "0") {
-          // Use last valid if available, otherwise keep dash
-          displayValue = lastValidNumbers[i] || "-";
-        } else {
-          // DB provided a valid number -> update last valid
-          lastValidNumbers[i] = dbVal;
-          localStorage.setItem('lastValidNumbers', JSON.stringify(lastValidNumbers));
-          displayValue = dbVal;
-        }
+      // Determine display value: use last valid if DB shows "-" or "0"
+      let displayValue = (dbVal === "-" || dbVal === "0") ? lastValidNumbers[i] || "-" : dbVal;
+
+      // Update last valid number if DB has valid value
+      if (dbVal !== "-" && dbVal !== "0") {
+        lastValidNumbers[i] = dbVal;
+        localStorage.setItem('lastValidNumbers', JSON.stringify(lastValidNumbers));
       }
 
-      // For Table 6: hide if "-" or "0"; otherwise show the DB value
-      if (i === 6) {
-        if (dbVal === "-" || dbVal === "0") {
-          // hide nurse station box
-          if (tableBox) tableBox.style.display = "none";
-          // Do not announce or change lastNurseNumber here
-          // Keep the display as whatever it was before (no forced change)
-          // Also clear shown value to avoid stale "0" being shown if box becomes visible later
-          if (lastShown[i] && lastShown[i] !== "") {
-            // we intentionally leave lastShown as-is; we'll update when a valid number arrives
-          }
-        } else {
-          // show nurse station
-          if (tableBox) tableBox.style.display = "flex";
+      // Update TableBox visibility (Table 6 always visible)
+      if (tableBox) tableBox.style.display = "flex";
 
-          // Announce only if this is a new nurse number (DB gave a valid number)
-          if (dbVal !== lastNurseNumber && shouldAnnounce(dbVal, i)) {
-            // Use unified speech format (Now serving/Now recalling handled by caller)
-            speakQueuedNumber(dbVal, i, "Now serving");
-            numEl.classList.add("pulse");
-            setTimeout(() => numEl.classList.remove("pulse"), 1000);
+      // Announce only if value changed and is valid
+      if (displayValue && displayValue !== lastAnnounced[i] && displayValue !== "-") {
+        speakQueuedNumber(displayValue, i, "Now serving");
+        numEl.classList.add("pulse");
+        setTimeout(() => numEl.classList.remove("pulse"), 1000);
 
-            lastNurseNumber = dbVal;
-            localStorage.setItem('lastNurseNumber', lastNurseNumber);
-          }
-
-          // Update display value for nurse station (we want the actual dbVal)
-          displayValue = dbVal;
-        }
+        lastAnnounced[i] = displayValue;
+        localStorage.setItem('lastAnnounced', JSON.stringify(lastAnnounced));
       }
 
-      // If displayValue is unchanged from what we are already showing, do nothing
-      if (lastShown[i] === displayValue) {
-        return;
-      }
-
-      // Update the visible text (for Table 6 if hidden, we still set text when it becomes visible)
+      // Update visible text and styles
       numEl.textContent = displayValue;
-      // update styles
       numEl.style.background = tableColors[i] || "#28a745";
       numEl.style.color = "#fff";
 
-      // Announce for Tables 2-5: only announce when the DB provided a valid new number (not when DB sent '-'/'0')
-      if (i >= 2 && i <= 5) {
-        // We should announce only if DB val is valid and it's a change
-        if (dbVal !== "-" && dbVal !== "0" && shouldAnnounce(dbVal, i)) {
-          speakQueuedNumber(dbVal, i, "Now serving");
-          numEl.classList.add("pulse");
-          setTimeout(() => numEl.classList.remove("pulse"), 1000);
-        }
-      }
-
-      // Save shown state
+      // Save last shown state
       lastShown[i] = displayValue;
       localStorage.setItem('lastShownTables', JSON.stringify(lastShown));
     });
@@ -608,18 +567,9 @@ function loadTables() {
 }
 
 function updateOWCVisibility() {
-  const table6Value = document.getElementById('num6').textContent.trim();
-  const owcContainer = document.getElementById('owcContainer');
-
-  // Hide OWC only if Table 6 has a valid number
-  if(table6Value !== "0" && table6Value !== "-"){
-    owcContainer.classList.remove('visible');
-    owcContainer.classList.add('hidden');
-    owcContainer.style.maxHeight = "0px";
-    return false;
-  }
-  return true; // Table 6 empty, OWC can show
+  return true; // Always allow OWC to show
 }
+
 
 function loadOWCList(){
   const owcContainer = document.getElementById('owcContainer');
@@ -668,11 +618,6 @@ function loadOWCList(){
       owcContainer.classList.add('hidden');
       owcContainer.style.maxHeight = "0px";
     }
-  });
-
-  // Also dynamically hide/show OWC if Table 6 changes
-  onValue(ref(db, `tableNumbers/table6`), snap => {
-    updateOWCVisibility();
   });
 }
 
