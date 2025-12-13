@@ -177,11 +177,6 @@
   box-sizing: border-box;
   font-size: clamp(3rem, 15vw, 8rem); /* scales with screen width */
 }
-
-
-
-
-
   .queue-number.pulse, .queue-number-consult.pulse {
   animation: highlightPulse 1s ease-in-out;
 }
@@ -244,16 +239,12 @@
   text-align: center;
   font-weight: 700;
   color: #fff;
-  animation: pulse 1.5s infinite;
+  animation: pulse-red 1.5s infinite;
   opacity: 0;
   transform: translateY(8px);
 }
 
-@keyframes pulse {
-  0% { box-shadow: 0 0 10px rgba(217,83,79,0.7);}
-  50% { box-shadow: 0 0 25px rgba(217,83,79,0.7);}
-  100% { box-shadow: 0 0 10px rgba(217,83,79,0.7);}
-}
+
 
 /* Responsive adjustments */
 @media (max-width:1200px){ 
@@ -294,6 +285,61 @@
 }
 #table6Box {
   grid-column: 1 / 3; /* span full width */
+}
+#mcContainer {
+  background: rgba(245,245,245,0.55);
+  backdrop-filter: blur(8px);
+  border-radius: 25px;
+  padding: 10px 20px 20px 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  transition: opacity 0.35s ease, max-height 0.4s ease, transform 0.35s ease;
+  max-height: 0; /* collapsed initially */
+  opacity: 0;
+  transform: translateY(-12px) scale(0.995);
+  pointer-events: none;
+  margin-top: 10px;
+}
+
+#mcContainer.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  max-height: 500px; /* adjust if needed */
+}
+
+#mcContainer.hidden {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.995);
+  pointer-events: none;
+  max-height: 0;
+}
+
+#mcContainer h2 {
+  font-size: 2em;
+  margin: 0 0 10px 0;
+  color: #007bff; /* Changed to blue */
+  text-align: center;
+}
+
+#mcList {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.mc-item {
+  /* Copy styles from .owc-item but with blue background */
+  font-size: 1.6em;
+  padding: 12px;
+  border-radius: 15px;
+  background: #007bff; /* blue background instead of red */
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+   animation: pulse-blue 1.5s infinite;
+  opacity: 0;
+  transform: translateY(8px);
 }
 </style>
 </head>
@@ -354,6 +400,12 @@
     </div>
   </div>
 
+<!-- -------- Medical Certificate List -------- -->
+<div id="mcContainer" class="hidden" style="flex-shrink:0;">
+  <h2>MEDICAL CERTIFICATE</h2>
+  <div id="mcList"></div>
+</div>
+
   <!-- -------- OWC PANEL AT BOTTOM -------- -->
   <div id="owcContainer" class="hidden" style="flex-shrink:0;">
     <h2>OUT WHEN CALLED</h2>
@@ -377,7 +429,7 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
+let announcedMCIds = new Set(JSON.parse(localStorage.getItem('announcedMCIds') || '[]'));
 /* ---------- LIVE CLOCK ---------- */
 function updateClock() {
   const now = new Date();
@@ -414,7 +466,17 @@ function processSpeechQueue() {
   const { num, table, action } = speechQueue.shift();
 
   const [prefix, numStr] = (num || "").split("-");
-  const spokenPrefix = prefix && prefix.toUpperCase() === "PP" ? "PEDIA-PENADUR" : prefix;
+let spokenPrefix;
+if (prefix && prefix.toUpperCase() === "PP") {
+  spokenPrefix = "PEDIA-PENADUR";
+} else if (prefix && prefix.toUpperCase() === "PI") {
+  spokenPrefix = "P I";
+} else if (prefix && prefix.toUpperCase() === "OP") {
+  spokenPrefix = "O P";
+}
+else {
+  spokenPrefix = prefix;
+}
   const number = parseInt(numStr || 0, 10) || numStr || num;
 
   // Determine area and table text
@@ -532,28 +594,19 @@ function loadTables() {
 
       dbVal = String(dbVal).trim();
 
-      // Determine display value: use last valid if DB shows "-" or "0"
-      let displayValue = (dbVal === "-" || dbVal === "0") ? lastValidNumbers[i] || "-" : dbVal;
-
-      // Update last valid number if DB has valid value
-      if (dbVal !== "-" && dbVal !== "0") {
-        lastValidNumbers[i] = dbVal;
-        localStorage.setItem('lastValidNumbers', JSON.stringify(lastValidNumbers));
-      }
+      // Always show current database value
+      let displayValue = dbVal;
 
       // Update TableBox visibility (Table 6 always visible)
       if (tableBox) tableBox.style.display = "flex";
 
       // Announce only if value changed and is valid
-      if (displayValue && displayValue !== lastAnnounced[i] && displayValue !== "-") {
-        speakQueuedNumber(displayValue, i, "Now serving");
-        numEl.classList.add("pulse");
-        setTimeout(() => numEl.classList.remove("pulse"), 1000);
-
-        lastAnnounced[i] = displayValue;
-        localStorage.setItem('lastAnnounced', JSON.stringify(lastAnnounced));
-      }
-
+if (displayValue && displayValue !== "-" && displayValue.trim() !== "") {
+  speakQueuedNumber(displayValue, i, "Now serving");
+  numEl.classList.add("pulse");
+  setTimeout(() => numEl.classList.remove("pulse"), 1000);
+  // Do not update lastAnnounced to always announce
+}
       // Update visible text and styles
       numEl.textContent = displayValue;
       numEl.style.background = tableColors[i] || "#28a745";
@@ -565,7 +618,6 @@ function loadTables() {
     });
   });
 }
-
 function updateOWCVisibility() {
   return true; // Always allow OWC to show
 }
@@ -641,10 +693,14 @@ onValue(ref(db,"recallEvents"), snap=>{
 document.getElementById('startBtn').addEventListener('click', ()=>{
   document.getElementById('startOverlay').style.display='none';
   document.getElementById('mainContainer').style.display='flex';
+  // Existing calls
   speakQueuedNumber("Dashboard started",0,"");
   loadVitalSignList();
   loadTables();
   loadOWCList();
+
+  // Add new call for Medical Certificate list
+  loadMCList();
 });
 
 function fitNumber(el) {
@@ -654,6 +710,99 @@ function fitNumber(el) {
     el.style.fontSize = fontSize + "px";
   }
 }
+// Declare a Set outside the function to keep track of announced certificate numbers
+let announcedCertificates = new Set(JSON.parse(localStorage.getItem('announcedCertificates') || '[]'));
+
+function loadMCList() {
+  const mcContainer = document.getElementById('mcContainer');
+  const mcList = document.getElementById('mcList');
+
+  onValue(ref(db, "mcList"), snap => {
+    mcList.innerHTML = '';
+
+    if (!snap.exists()) {
+      mcContainer.classList.remove('visible');
+      mcContainer.classList.add('hidden');
+      mcContainer.style.maxHeight = "0px";
+      return;
+    }
+
+    const items = Object.entries(snap.val() || {});
+    // Sort by timestamp descending (latest first)
+    items.sort((a, b) => b[1].timestamp - a[1].timestamp);
+
+    // Now, sort by prefix alphabetically and then numerically
+    items.sort((a, b) => {
+      const [prefixA, numStrA] = (a[1].number || "").split("-");
+      const [prefixB, numStrB] = (b[1].number || "").split("-");
+
+      // Compare prefixes
+      const prefixCompare = (prefixA || "").localeCompare(prefixB || "");
+      if (prefixCompare !== 0) return prefixCompare;
+
+      // If prefixes are same, compare numeric parts
+      const numA = parseInt((numStrA || "0").replace(/^0+/, ""), 10);
+      const numB = parseInt((numStrB || "0").replace(/^0+/, ""), 10);
+      return numA - numB;
+    });
+
+    // Loop through sorted items
+    items.forEach(([id, e]) => {
+      const div = document.createElement('div');
+      div.className='mc-item';
+      div.textContent = e.number; // e.g., "PR-001"
+      mcList.appendChild(div);
+
+      // Animate appearance
+      requestAnimationFrame(() => { 
+        div.style.transition="opacity .28s ease, transform .28s ease"; 
+        div.style.opacity=1; 
+        div.style.transform="translateY(0)"; 
+      });
+
+      // Announce only if not announced before
+      if (!announcedMCIds.has(id)) {
+        announcedMCIds.add(id);
+        localStorage.setItem('announcedMCIds', JSON.stringify(Array.from(announcedMCIds)));
+
+        const [prefix, numStr] = (e.number || "").split("-");
+
+        let spokenPrefix;
+        if (prefix && prefix.toUpperCase() === "PP") {
+          spokenPrefix = "PEDIA-PENADUR";
+        } else if (prefix && prefix.toUpperCase() === "PI") {
+          spokenPrefix = "P I";
+        } else if (prefix && prefix.toUpperCase() === "OP") {
+          spokenPrefix = "O P";
+        } else {
+          spokenPrefix = prefix || "";
+        }
+
+        const spokenNumber = (numStr || "").replace(/^0+/, "");
+        const message = `Patient number ${spokenPrefix} ${spokenNumber}, please proceed to the Pediatric Clinic Room 209 - Nurse Station to claim your medical certificate.`;
+
+        announceCustomMessage(message);
+      }
+    });
+
+    // Show the container
+    mcContainer.classList.remove('hidden');
+    mcContainer.classList.add('visible');
+    requestAnimationFrame(() => { mcContainer.style.maxHeight = mcContainer.scrollHeight + "px"; });
+  });
+}
+
+
+
+// Implement the announceCustomMessage function
+function announceCustomMessage(message) {
+  const utter = new SpeechSynthesisUtterance(message);
+  utter.rate = 1;
+  utter.pitch = 1;
+  if (voices.length) utter.voice = getRandomVoice();
+  window.speechSynthesis.speak(utter);
+}
+
 </script>
 </body>
 </html>
