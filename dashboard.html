@@ -450,10 +450,16 @@ function getRandomVoice() { if(!voices.length) return null; return voices[Math.f
 const speechQueue = [];
 let isSpeaking = false;
 function speakQueuedNumber(num, table, action = "Now serving") {
-  if(!num) return;
 
+  if (!num) return;
+
+  // Add to queue
   speechQueue.push({ num, table, action });
-  if(!isSpeaking) processSpeechQueue();
+
+  // If the queue was empty before adding, start processing immediately
+  if (speechQueue.length === 1 && !isSpeaking) {
+    processSpeechQueue();
+  }
 }
 
 function processSpeechQueue() {
@@ -789,6 +795,7 @@ function loadMCList() {
     mcContainer.classList.remove('hidden');
     mcContainer.classList.add('visible');
     requestAnimationFrame(() => { mcContainer.style.maxHeight = mcContainer.scrollHeight + "px"; });
+
   });
 }
 
