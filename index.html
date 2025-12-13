@@ -89,10 +89,6 @@ h1 {
   gap: 12px;
 }
 
-#historyContainer {
-  width: 280px;
-}
-
 #owcContainer {
   width: 320px;
 }
@@ -308,9 +304,9 @@ h2.section-title {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+
   white-space: nowrap;
-  max-width: 60px;
+  max-width: 80px;
 }
 
 .done-number > div:last-child {
@@ -510,7 +506,7 @@ h2.section-title {
 
 /* ===== LEFT PANEL - History Done List ===== */
 #historyContainer {
-  width: 280px;
+  width: 325px;
   max-width: 100%;
   display: flex;
   flex-direction: column;
@@ -565,6 +561,32 @@ h2.section-title {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+.ref-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  margin-right: 8px;
+}
+/* Style for checkboxes in History Done List */
+.history-done-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+/* Highlight style for clicked referral item */
+.referral-highlight {
+  background-color: #ffe066; /* or any highlight color you prefer */
+  transition: background-color 0.3s ease;
+}
+/* Persistent highlight for selected referral */
+/* Persistent highlight for selected referral in light green */
+.referral-selected {
+  background-color: #90ee90; /* Light green color */
+  transition: background-color 0.3s ease;
 }
 </style>
 </head>
@@ -670,14 +692,59 @@ h2.section-title {
       </div>
     </div>
   </div>
+
+<!-- REFERRAL LIST (Placed beside Table 2 exactly) -->
+ <div id="referralContainer" style="flex:1; min-width:280px;">
+  <div class="card" style="background:#fff; padding:14px; border-radius:14px; box-shadow:var(--shadow);">
+    <!-- HEADER -->
+    <div class="collapsible-header" style="display:flex; align-items:center; justify-content:space-between;">
+      <h2 class="section-title" style="margin:0;font-size:1rem">REFERRALS</h2>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="referralRestoreTable" style="padding:4px 8px; border-radius:6px;">
+          <option value="">Select Table</option>
+          <option value="2">Table 2</option>
+          <option value="3">Table 3</option>
+          <option value="4">Table 4</option>
+          <option value="5">Table 5</option>
+          <option value="6">Nurse Station</option>
+        </select>
+        <button id="referralRestoreBtn" style="padding:4px 8px; border-radius:6px;background:#37bd5a; color:#fff; border:none;">
+          ✅
+        </button>
+        <button id="referralToggleBtn" class="toggle-btn" onclick="toggleReferral()" aria-expanded="true" style="padding:6px 12px;">
+          <span class="arrow">▾</span>
+          <span id="referralToggleLabel">Hide</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- COLLAPSIBLE CONTENT -->
+    <div id="referralContent" class="collapsible-content" style="background:#fff; border-radius:8px; margin-top:10px; padding:10px;">
+      <!-- Input -->
+      <div style="margin-bottom:10px; display:flex; gap:6px;">
+        <!-- Option A: Using label with 'for' -->
+<label for="referralInput" style="display:block;margin-bottom:4px;font-weight:600;">Referral Number</label>
+<input id="referralInput" type="text" placeholder="Enter referral number (ex: GS-001)" style="flex:1; padding:6px; border-radius:6px; border:1px solid #ccc" />
+       <button id="addReferralBtn" aria-label="Add referral" style="background:#17a2b8; color:#fff; border:none; border-radius:6px; padding:6px 12px;">Add</button>
+      </div>
+      <!-- List -->
+      <div id="referralList" class="owc-list" style="background:#fff; border-radius:8px; padding:8px; max-height:300px; overflow-y:auto;"></div>
+    </div>
+  </div>
 </div>
+
+</div>
+
+
 
 <!-- SETTINGS MODAL -->
 <div id="modalOverlay">
   <div id="modalBox">
     <h2>Settings</h2>
     <label style="display:block;margin-top:10px">Custom Prefixes (comma separated)</label>
-    <input id="prefixInput" type="text" style="width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc">
+   <label for="prefixInput" style="display:block;margin-top:10px;">Custom Prefixes (comma separated)</label>
+<input id="prefixInput" name="prefixes" type="text" style="width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc" />
     <div class="settings-buttons">
       <button onclick="savePrefix()" style="background:var(--primary);">SAVE PREFIXES</button>
       <button onclick="resetQueues()" style="background:var(--danger);">RESET QUEUES & OWC</button>
@@ -693,7 +760,7 @@ h2.section-title {
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, push, remove, update, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
   /* -------------------- CONFIG -------------------- */
   const firebaseConfig = {
@@ -707,7 +774,7 @@ h2.section-title {
   };
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-
+const referralDB = ref(db, "referrals");
   /* -------------------- STATE -------------------- */
   const TOTAL_TABLES = 6;
   const MAX_VITAL_SIGN = 10;
@@ -716,7 +783,9 @@ h2.section-title {
   let seriesByPrefix = {};
   let table1DoneNumbers = [];
   let usedNumbers = new Set();
-
+const checkedHistoryNumbers = new Set();
+const checkedStates = JSON.parse(localStorage.getItem('checkedStates')) || {};
+const mcListRef = ref(db, "mcList");
   /* -------------------- UTIL -------------------- */
   function toast(msg){
     const d = document.createElement("div");
@@ -785,7 +854,9 @@ window.addEventListener("load", () => {
       for (let i = 1; i <= TOTAL_TABLES; i++) {
         updateTableButtons(i);
       }
+toggleReferralsVisibility(); // Add this line
     });
+
   });
 
   // Firebase listeners for table numbers
@@ -863,7 +934,10 @@ window.toggleHeader = function() {
 /* -------------------- APPLY TABLE PERMISSIONS -------------------- */
 function applyTablePermissions() {
   const vitalContainer = document.getElementById("vitalSignContainer");
-  const historyContainer = document.getElementById("historyContainer"); // <--- History Done
+  const historyContainer = document.getElementById("historyContainer");
+  const referralContainer = document.getElementById("referralContainer");
+
+  // Show/hide tables
   for (let i = 1; i <= TOTAL_TABLES; i++) {
     const box = document.getElementById("tableBox" + i);
     if (selectedTable === "all" || i === selectedTable) box.style.display = "block";
@@ -877,16 +951,20 @@ function applyTablePermissions() {
     vitalContainer.style.display = "none";
   }
 
-  // History Done list only visible for Nurse Station (Table 6) or all
+  // History Done list only visible for Table 6 or all
   if (selectedTable === 6 || selectedTable === "all") {
     historyContainer.style.display = "block";
   } else {
     historyContainer.style.display = "none";
   }
+
+  // Referrals list only visible at Tables 1 and 6
+  if (selectedTable === 1 || selectedTable === 6 || selectedTable === "all") {
+    referralContainer.style.display = "block";
+  } else {
+    referralContainer.style.display = "none";
+  }
 }
-
-
-
   /* -------------------- PREFIXES (Firebase) -------------------- */
   onValue(ref(db,"settings/prefixes"), snap=>{
     prefixes = snap.exists()? snap.val() : [];
@@ -1009,23 +1087,41 @@ window.doneQueue = function(i){
 window.owcQueue = function(i) {
   const el = document.getElementById("num" + i);
   const num = el.textContent;
+
   if (!num || num === "0" || num === "-") return;
 
-  // Pulse red for OWC
-  pulseTable(i, "red");
+  const owcButton = document.querySelector(`#tableBox${i} .owc-btn`);
+  if (owcButton) {
+    // Disable button immediately to prevent multiple clicks
+    owcButton.disabled = true;
+  }
 
-  // Push to Firebase OWC
-  push(ref(db, "owc"), { table: i, number: num, time: Date.now() });
+  // Check if number already in OWC list
+  get(ref(db, "owc")).then(snapshot => {
+    const owcList = snapshot.exists() ? Object.values(snapshot.val()).map(v => v.number) : [];
+    if (owcList.includes(num)) {
+      toast("Number already in OWC list");
+      // Re-enable button if it was disabled
+      if (owcButton) owcButton.disabled = false;
+      return;
+    }
 
-  // Clear the table number
-  el.textContent = "-";
+    // Pulse red
+    pulseTable(i, "red");
 
-  const nextBtn = document.getElementById("nextBtn" + i);
-  if (nextBtn) nextBtn.disabled = false;
+    // Push to Firebase OWC
+    push(ref(db, "owc"), { table: i, number: num, time: Date.now() });
 
-  updateTableButtons(i);
+    // Clear the table number
+    el.textContent = "-";
+
+    // Enable next button
+    const nextBtn = document.getElementById("nextBtn" + i);
+    if (nextBtn) nextBtn.disabled = false;
+
+    updateTableButtons(i);
+  });
 };
-
 
 
   window.recallQueue = function(i){
@@ -1230,35 +1326,41 @@ function renderDoneList() {
   }
 
   // Loop through done numbers
-  table1DoneNumbers.forEach((n) => {
-    if (!usedInTables.has(n)) {
-      const div = document.createElement("div");
-      div.className = "done-number";
+table1DoneNumbers.forEach((n) => {
+  if (!usedInTables.has(n)) {
+    const div = document.createElement("div");
+    div.className = "done-number";
 
-      const left = document.createElement("div");
-      left.textContent = n;
+    // Create left container with only number (no checkbox)
+    const left = document.createElement("div");
+    left.style.display = "flex";
+    left.style.alignItems = "center";
+    left.style.gap = "8px";
 
+    // Show entire number string
+    const numberSpan = document.createElement("span");
+    numberSpan.textContent = n;
+    left.appendChild(numberSpan);
       const rightControls = document.createElement("div");
       rightControls.style.display = "flex";
       rightControls.style.gap = "6px";
       rightControls.style.alignItems = "center";
 
-      // Only show dropdown + restore button for Nurse Station or "all"
+      // Show dropdown + restore button only for Nurse Station or "all"
       if (selectedTable === 6 || selectedTable === "all") {
-       const tableSelect = document.createElement("select");
-tableSelect.className = "restore-select";
+        const tableSelect = document.createElement("select");
+        tableSelect.className = "restore-select";
 
-// Add all tables to dropdown
-for (const [id, name] of Object.entries(tableNames)) {
-  const opt = document.createElement("option");
-  opt.value = id;
-  opt.textContent = name;
-  tableSelect.appendChild(opt);
-}
+        // Add all tables to dropdown
+        for (const [id, name] of Object.entries(tableNames)) {
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.textContent = name;
+          tableSelect.appendChild(opt);
+        }
 
-// Default selected table
-tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
-
+        // Set default selected table
+        tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
 
         const restoreBtn = document.createElement("button");
         restoreBtn.className = "list-action-btn";
@@ -1270,35 +1372,31 @@ tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
         restoreBtn.onclick = () => {
           const chosenTable = parseInt(tableSelect.value);
           const el = document.getElementById("num" + chosenTable);
-
-      if (chosenTable === 1) {
-    addToVitalSignList(n);
-    set(ref(db, "tableNumbers/table1"), n);
-    document.getElementById("num1").textContent = n;
-    updateTableButtons(1);
-
-    // ✅ Remove from Done Numbers and refresh UI
-    table1DoneNumbers = table1DoneNumbers.filter(x => x !== n);
-    renderDoneList();
-  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
-}
- else{
-            if (el.textContent !== "0" && el.textContent !== "-") {
-              toast(`Cannot restore: Table ${chosenTable} already has ${el.textContent}`);
-              return;
-            }
+          if (chosenTable !== 1 && el.textContent !== "0" && el.textContent !== "-") {
+            toast(`Table ${chosenTable} already has ${el.textContent}`);
+            return;
+          }
+          if (chosenTable === 1) {
+            addToVitalSignList(n);
+            set(ref(db, "tableNumbers/table1"), n);
+            document.getElementById("num1").textContent = n;
+            updateTableButtons(1);
+            // Remove from Done list
+            table1DoneNumbers = table1DoneNumbers.filter(x => x !== n);
+            renderDoneList();
+            saveDoneNumbersToFirebase();
+          } else {
             el.textContent = n;
             usedNumbers.add(n);
             table1DoneNumbers = table1DoneNumbers.filter(x => x !== n);
             sortTable1DoneNumbers();
             set(ref(db, "tableNumbers/table" + chosenTable), n);
-            renderDoneList(); // refresh after restore
-  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
+            renderDoneList();
+            saveDoneNumbersToFirebase();
             const nextBtn = document.getElementById("nextBtn" + chosenTable);
             if (nextBtn) nextBtn.disabled = true;
             updateTableButtons(chosenTable);
           }
-
           pulseTable(chosenTable, "yellow");
           highlightTable(chosenTable);
         };
@@ -1313,8 +1411,6 @@ tableSelect.value = selectedTable === "all" ? 6 : selectedTable;
     }
   });
 }
-
-
 
 
   /* -------------------- OWC LIST -------------------- */
@@ -1422,9 +1518,12 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
   window.showSettings = ()=>{ document.getElementById("modalOverlay").style.display = "flex"; }
   window.closeSettings = ()=>{ document.getElementById("modalOverlay").style.display = "none"; }
   window.savePrefix = ()=>{ const p = document.getElementById("prefixInput").value.split(",").map(s=>s.trim()).filter(Boolean); set(ref(db,"settings/prefixes"), p); toast("Prefixes saved"); }
- window.resetQueues = async () => {
+
+
+window.resetQueues = async () => {
   if (!confirm("Reset all queues & OWC?")) return;
 
+  // Reset table numbers
   for (let i = 1; i <= TOTAL_TABLES; i++) {
     document.getElementById("num" + i).textContent = "0";
     await set(ref(db, "tableNumbers/table" + i), "0");
@@ -1432,6 +1531,7 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
     if (nextBtn) nextBtn.disabled = (i !== 1);
   }
 
+  // Clear vital sign list
   document.getElementById("vitalSignList").innerHTML = "";
 
   // Clear local arrays
@@ -1439,26 +1539,49 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
   usedNumbers.clear();
   seriesByPrefix = {};
 
-  // Remove OWC
+  // Remove OWC list
   await remove(ref(db, "owc"));
 
-  // Remove Vital Sign List in Firebase
+  // Remove Vital Sign List
   await remove(ref(db, "vitalSignList"));
 
-  // Remove History Done List
-  await remove(ref(db, "historyDone"));
+  // Remove mcList
+  try {
+    console.log("Removing mcList...");
+    await remove(ref(db, "mcList"));
+    console.log("mcList removed successfully");
+  } catch (error) {
+    console.error("Error removing mcList:", error);
+  }
+
+  // Remove historyDone list
+  try {
+    console.log("Removing historyDone...");
+    await remove(ref(db, "historyDone"));
+    console.log("historyDone removed successfully");
+  } catch (error) {
+    console.error("Error removing historyDone:", error);
+  }
+
+  // Remove referral list
+  await remove(ref(db, "referrals"));
 
   // Reset prefix series
   await set(ref(db, "prefixSeries"), {});
 
-  // Render Done Numbers again
-  renderDoneList();
-  saveDoneNumbersToFirebase(); // 🔹 Save to Firebase
-  toast("Queues reset");
+  // Reset checkboxes and local storage
+ document.querySelectorAll(".history-done-checkbox").forEach(checkbox => {
+  checkbox.checked = false;
+});
+localStorage.setItem('checkedStates', JSON.stringify({})); // Clear stored checkbox states
+
+// Re-render the list
+renderDoneList();
+
+toast("Queues, referrals, and history reset");
 };
 
-
-  /* -------------------- UTILITIES -------------------- */
+ /* -------------------- UTILITIES -------------------- */
   function createButton(label, bgColor, onClick, width="40px", height="35px"){
     const btn = document.createElement("button");
     btn.textContent = label;
@@ -1580,29 +1703,59 @@ window.toggleHistory = function(){
   };
 
   // FIREBASE SYNC HISTORY DONE
- onValue(ref(db,"historyDone"), snap=>{
+onValue(ref(db, "historyDone"), (snap) => {
   const list = document.getElementById("historyList");
   list.innerHTML = "";
-  if(!snap.exists()) return;
+  if (!snap.exists()) return;
 
   const historyArray = Object.entries(snap.val());
 
-  // Sort by prefix & number
-  historyArray.sort((a,b)=>{
-    const [pA,nA] = a[1].number.split("-");
-    const [pB,nB] = b[1].number.split("-");
-    if(pA !== pB) return pA.localeCompare(pB);
-    return parseInt(nA,10)-parseInt(nB,10);
+  // Sort as before
+  historyArray.sort((a, b) => {
+    const [pA, nA] = a[1].number.split("-");
+    const [pB, nB] = b[1].number.split("-");
+    if (pA !== pB) return pA.localeCompare(pB);
+    return parseInt(nA, 10) - parseInt(nB, 10);
   });
 
-  historyArray.forEach(([key, v])=>{
+  // Iterate through sorted history
+  historyArray.forEach(([key, v]) => {
     const div = document.createElement("div");
     div.className = "owc-item";
 
-    // LEFT: only show the number (remove Table info)
+    // LEFT: checkbox and number display
     const left = document.createElement("div");
-    left.textContent = v.number;  // <-- removed "(from Table #)"
+    left.style.display = "flex";
+    left.style.alignItems = "center";
+    left.style.gap = "8px";
 
+// Inside your onValue callback for "historyDone"
+const checkbox = document.createElement("input");
+checkbox.type = "checkbox";
+checkbox.className = "history-done-checkbox";
+
+// Set checked based on persisted state
+checkbox.checked = !!checkedStates[v.number];
+
+// Update state on change
+checkbox.addEventListener('change', () => {
+  if (checkbox.checked) {
+    checkedStates[v.number] = true;
+  } else {
+    delete checkedStates[v.number];
+  }
+  localStorage.setItem('checkedStates', JSON.stringify(checkedStates));
+});
+
+    const numberSpan = document.createElement("span");
+    numberSpan.textContent = v.number;
+
+    left.appendChild(checkbox);
+    left.appendChild(numberSpan);
+
+    div.appendChild(left);
+
+    // RIGHT controls
     const rightControls = document.createElement("div");
     rightControls.style.display = "flex";
     rightControls.style.gap = "6px";
@@ -1610,10 +1763,11 @@ window.toggleHistory = function(){
 
     const tableSelect = document.createElement("select");
     tableSelect.className = "restore-select";
-    for(let i=1;i<=TOTAL_TABLES;i++){
+
+    for (let i = 1; i <= TOTAL_TABLES; i++) {
       const opt = document.createElement("option");
       opt.value = i;
-      opt.textContent = (i===6) ? "Nurse Station" : `Table ${i}`;
+      opt.textContent = i === 6 ? "Nurse Station" : `Table ${i}`;
       tableSelect.appendChild(opt);
     }
     tableSelect.value = v.table;
@@ -1624,50 +1778,346 @@ window.toggleHistory = function(){
     restoreBtn.style.color = "#fff";
     restoreBtn.textContent = "✅";
     restoreBtn.title = "Restore to selected table";
-    restoreBtn.onclick = ()=>{
+
+    restoreBtn.onclick = () => {
       const chosenTable = parseInt(tableSelect.value);
       const numToRestore = v.number;
 
-      const el = document.getElementById("num"+chosenTable);
-      if(chosenTable !== 1 && el.textContent !== "0" && el.textContent !== "-"){
+      const el = document.getElementById("num" + chosenTable);
+      if (
+        chosenTable !== 1 &&
+        el.textContent !== "0" &&
+        el.textContent !== "-"
+      ) {
         toast(`Table ${chosenTable} already has ${el.textContent}`);
         return;
       }
 
-      if(chosenTable === 1){
+      if (chosenTable === 1) {
         const vitalList = document.getElementById("vitalSignList");
-        if(vitalList.children.length >= MAX_VITAL_SIGN){
+        if (vitalList.children.length >= MAX_VITAL_SIGN) {
           toast("Vital Sign Area full");
           return;
         }
         addToVitalSignList(numToRestore);
-        set(ref(db,"tableNumbers/table1"), numToRestore);
+        set(ref(db, "tableNumbers/table1"), numToRestore);
         document.getElementById("num1").textContent = numToRestore;
       } else {
         el.textContent = numToRestore;
-        set(ref(db,"tableNumbers/table"+chosenTable), numToRestore);
+        set(ref(db, "tableNumbers/table" + chosenTable), numToRestore);
       }
 
-      pulseTable(chosenTable,"yellow");
+      pulseTable(chosenTable, "yellow");
       highlightTable(chosenTable);
 
-      remove(ref(db,"historyDone/"+key));
+      // Remove from history
+      remove(ref(db, "historyDone/" + key));
     };
 
     rightControls.appendChild(tableSelect);
     rightControls.appendChild(restoreBtn);
-
-    div.appendChild(left);
     div.appendChild(rightControls);
     list.appendChild(div);
   });
 });
+
+
+
+
 window.changeTable = function() {
   document.getElementById("modalOverlay").style.display = "none"; // close settings modal
   document.getElementById("userMenuOverlay").style.display = "flex"; // show table selection
 };
 function saveDoneNumbersToFirebase() {
   set(ref(db, "table1DoneNumbers"), table1DoneNumbers);
+}
+/* ---------------------------
+   RENDER REFERRALS IN COLUMNS
+--------------------------- */
+function renderReferrals(referrals) {
+    const container = document.getElementById("referralList");
+    container.innerHTML = "";
+
+    // Sort numerically by prefix and number
+    referrals.sort((a, b) => {
+        const [preA, numA] = a.number.split("-");
+        const [preB, numB] = b.number.split("-");
+        if (preA < preB) return -1;
+        if (preA > preB) return 1;
+        return parseInt(numA, 10) - parseInt(numB, 10);
+    });
+
+    referrals.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "owc-item"; // same as OWC/History
+        div.dataset.number = item.number;
+        div.dataset.key = item.key;
+
+        div.innerHTML = `
+            <span class="number-cell">${item.number}</span>
+            <button class="delete-btn" data-del="${item.key}" aria-label="Delete referral">✕</button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+
+/* ---------------------------
+   ADD REFERRAL
+--------------------------- */
+async function addReferral() {
+  const input = document.getElementById("referralInput");
+  const val = input.value.trim();
+
+  if (!val) return toast("Enter a referral number");
+
+  const newRef = push(referralDB);
+  await set(newRef, {
+    number: val,
+    timestamp: Date.now()
+  });
+
+  input.value = "";
+}
+
+
+/* ---------------------------
+   DELETE REFERRAL
+--------------------------- */
+async function deleteReferral(key) {
+  await remove(ref(db, "referrals/" + key));
+}
+
+
+// Attach click handlers to referral items for selection
+function attachReferralHandlers() {
+  document.querySelectorAll("#referralList .owc-item").forEach(item => {
+    item.onclick = () => {
+      // Remove 'selected' from all items
+      document.querySelectorAll("#referralList .owc-item").forEach(i => i.classList.remove("selected"));
+      // Add 'selected' to clicked item
+      item.classList.add("selected");
+    };
+  });
+}
+/* ---------------------------
+   RESTORE SELECTED REFERRAL
+--------------------------- */
+async function restoreReferral() {
+  const selectedItem = document.querySelector("#referralList .owc-item.selected");
+  if (!selectedItem) {
+    toast("Select a referral first");
+    return;
+  }
+  const number = selectedItem.dataset.number;
+
+  // find the referral data from referralList
+  const referral = referralList.find(r => r.number === number);
+  if (!referral) {
+    toast("Referral not found");
+    return;
+  }
+
+  const table = document.getElementById("referralRestoreTable").value;
+  if (!table) {
+    toast("Select a table");
+    return;
+  }
+
+  const tableRef = ref(db, `tableNumbers/table${table}`);
+  const snap = await get(tableRef);
+  const value = snap.val();
+
+  // Check if table is occupied
+  if (value !== null && value !== "" && value !== undefined && value !== "-") {
+    return toast(`Table ${table} is still occupied. Clear it first.`);
+  }
+
+  // Handle Table 1 (Vital Sign List)
+  if (table == 1) {
+    const vitalSignRef = ref(db, "vitalSignList");
+    const vitalSignSnap = await get(vitalSignRef);
+    const vitalSignData = vitalSignSnap.exists() ? vitalSignSnap.val() : {};
+
+    const currentCount = Object.keys(vitalSignData).length;
+    if (currentCount >= MAX_VITAL_SIGN) {
+      return toast("Vital Sign List is full. Cannot restore.");
+    }
+    if (vitalSignData[referral.number]) {
+      return toast("Number already in Vital Sign List");
+    }
+
+    await set(tableRef, referral.number);
+    await deleteReferral(referral.key);
+    toast(`Restored ${referral.number} to Table 1`);
+    return;
+  }
+
+  // For other tables
+  await set(tableRef, referral.number);
+  await deleteReferral(referral.key);
+  toast(`Restored ${referral.number} to Table ${table}`);
+}
+
+// Inside your onValue(ref(db, "referrals"), ...) callback:
+onValue(ref(db, "referrals"), snap => {
+  referralList = snap.exists()
+    ? Object.entries(snap.val()).map(([key, val]) => ({ ...val, key }))
+    : [];
+
+  // ... your existing rendering code ...
+  // After appending all referral items, insert:
+  attachReferralItemHandlers();
+});
+
+function attachReferralItemHandlers() {
+  document.querySelectorAll("#referralList .owc-item").forEach(item => {
+    item.addEventListener("click", () => {
+      // Remove 'selected' from all items
+      document.querySelectorAll("#referralList .owc-item").forEach(i => i.classList.remove("selected"));
+      // Add 'selected' to clicked item
+      item.classList.add("selected");
+    });
+  });
+}
+/* ---------------------------
+   CLICK-TO-SELECT & DELETE HANDLERS
+--------------------------- */
+document.getElementById("referralList").addEventListener("click", (e) => {
+  const del = e.target.dataset.del;
+  if (del) return deleteReferral(del);
+
+  const item = e.target.closest(".owc-item");
+  if (!item) return;
+
+  // Remove 'referral-selected' from all items
+  document.querySelectorAll("#referralList .owc-item").forEach(el => {
+    el.classList.remove("referral-selected");
+  });
+
+  // Add 'referral-selected' to the clicked item
+  item.classList.add("referral-selected");
+});
+
+/* ---------------------------
+   REALTIME FIREBASE SYNC
+--------------------------- */
+let referralList = [];
+
+onValue(referralDB, snap => {
+  referralList = snap.exists()
+    ? Object.entries(snap.val()).map(([key, val]) => ({ ...val, key }))
+    : [];
+
+  // Sort numerically / alphabetically
+  referralList.sort((a, b) => a.number.localeCompare(b.number));
+
+  const container = document.getElementById("referralList");
+  container.innerHTML = "";
+  container.classList.add("flex-wrap"); // enable column-style layout
+
+  // Render referral items
+  referralList.forEach(item => {
+    const prefix = item.number.split("-")[0];
+    const color = stringToColor(prefix);
+
+    const div = document.createElement("div");
+    div.className = "owc-item";
+    div.dataset.number = item.number;
+
+    div.innerHTML = `
+      <span class="ref-tag" style="background:${color};">${prefix}</span>
+      ${item.number}
+      <button class="list-action-btn" style="background: var(--danger); color:#fff;" data-del="${item.key}">❌</button>
+    `;
+    container.appendChild(div);
+  });
+
+  // Attach click handlers after rendering all items
+  attachReferralHandlers();
+});
+/* ---------------------------
+   EVENT LISTENERS
+--------------------------- */
+document.getElementById("addReferralBtn").addEventListener("click", addReferralToList);
+document.getElementById("referralRestoreBtn").addEventListener("click", restoreReferral);
+
+function toggleSection(contentId, btnId, labelId) {
+  const content = document.getElementById(contentId);
+  const btn = document.getElementById(btnId);
+  const label = document.getElementById(labelId);
+  const isCollapsed = content.classList.toggle("collapsed");
+  
+  // Update button arrow and label
+  const arrow = btn.querySelector(".arrow");
+  if (isCollapsed) {
+    arrow.style.transform = "rotate(-90deg)";
+    label.textContent = "Show";
+  } else {
+    arrow.style.transform = "rotate(0deg)";
+    label.textContent = "Hide";
+  }
+}
+
+// Make toggle available globally
+window.toggleReferral = () => toggleSection("referralContent", "referralToggleBtn", "referralToggleLabel");
+async function addReferralToList() {
+  const input = document.getElementById("referralInput");
+  const num = input.value.trim().toUpperCase();
+
+  if (!num) return toast("Enter referral number");
+
+  const timestamp = Date.now();
+  const key = `${timestamp}-${Math.floor(Math.random()*999)}`;
+
+  await push(referralDB, {
+    number: num,
+    timestamp,
+    key
+  });
+
+  input.value = "";
+}
+// Inside your existing event listener for "change" on checkboxes (e.g., your code already has this part)
+document.getElementById("historyList").addEventListener("change", (e) => {
+  if (e.target.classList.contains("history-done-checkbox")) {
+    const checkbox = e.target;
+    const number = checkbox.nextElementSibling.textContent;
+    const mcRef = ref(db, "mcList");
+
+    if (checkbox.checked) {
+      // Save to Firebase
+      const newRef = push(mcRef);
+      set(newRef, {
+        number: number,
+        table: 2, // or whatever table
+        timestamp: Date.now()
+      });
+      console.log("Saved in Firebase:", number);
+    } else {
+      // Remove from Firebase
+      get(mcRef).then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          for (const key in data) {
+            if (data[key].number === number) {
+              remove(ref(db, "mcList/" + key));
+              console.log("Removed from Firebase:", number);
+              break;
+            }
+          }
+        }
+      });
+    }
+  }
+});
+function toggleReferralsVisibility() {
+  const referralContainer = document.getElementById("referralContainer");
+  if (selectedTable === 1 || selectedTable === 6 || selectedTable === "all") {
+    referralContainer.style.display = "block";
+  } else {
+    referralContainer.style.display = "none";
+  }
 }
 
   /* -------------------- END -------------------- */
