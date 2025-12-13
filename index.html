@@ -1523,10 +1523,18 @@ for (let i = 1; i <= TOTAL_TABLES; i++) {
 window.resetQueues = async () => {
   if (!confirm("Reset all queues & OWC?")) return;
 
-  // Reset table numbers
-  for (let i = 1; i <= TOTAL_TABLES; i++) {
-    document.getElementById("num" + i).textContent = "0";
-    await set(ref(db, "tableNumbers/table" + i), "0");
+  // Reset table 1 to 0
+  document.getElementById("num1").textContent = "0";
+  await set(ref(db, "tableNumbers/table1"), "0");
+  
+  // Set tables 2-6 to "-" (empty)
+  for (let i = 2; i <= 6; i++) {
+    document.getElementById("num" + i).textContent = "-";
+    await set(ref(db, "tableNumbers/table" + i), "-");
+  }
+
+  // Disable next buttons except for table 1
+  for (let i = 1; i <= 6; i++) {
     const nextBtn = document.getElementById("nextBtn" + i);
     if (nextBtn) nextBtn.disabled = (i !== 1);
   }
@@ -1534,53 +1542,27 @@ window.resetQueues = async () => {
   // Clear vital sign list
   document.getElementById("vitalSignList").innerHTML = "";
 
-  // Clear local arrays
+  // Clear internal data
   table1DoneNumbers = [];
   usedNumbers.clear();
   seriesByPrefix = {};
 
-  // Remove OWC list
+  // Remove other lists in Firebase
   await remove(ref(db, "owc"));
-
-  // Remove Vital Sign List
   await remove(ref(db, "vitalSignList"));
-
-  // Remove mcList
-  try {
-    console.log("Removing mcList...");
-    await remove(ref(db, "mcList"));
-    console.log("mcList removed successfully");
-  } catch (error) {
-    console.error("Error removing mcList:", error);
-  }
-
-  // Remove historyDone list
-  try {
-    console.log("Removing historyDone...");
-    await remove(ref(db, "historyDone"));
-    console.log("historyDone removed successfully");
-  } catch (error) {
-    console.error("Error removing historyDone:", error);
-  }
-
-  // Remove referral list
+  await remove(ref(db, "mcList"));
+  await remove(ref(db, "historyDone"));
   await remove(ref(db, "referrals"));
-
-  // Reset prefix series
   await set(ref(db, "prefixSeries"), {});
 
-  // Reset checkboxes and local storage
- document.querySelectorAll(".history-done-checkbox").forEach(checkbox => {
-  checkbox.checked = false;
-});
-localStorage.setItem('checkedStates', JSON.stringify({})); // Clear stored checkbox states
+  // Clear local checkbox states
+  localStorage.setItem('checkedStates', JSON.stringify({}));
 
-// Re-render the list
-renderDoneList();
+  // Re-render done list
+  renderDoneList();
 
-toast("Queues, referrals, and history reset");
+  toast("Queues, referrals, and history reset");
 };
-
  /* -------------------- UTILITIES -------------------- */
   function createButton(label, bgColor, onClick, width="40px", height="35px"){
     const btn = document.createElement("button");
