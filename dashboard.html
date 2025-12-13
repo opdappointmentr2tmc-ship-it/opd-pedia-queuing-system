@@ -480,6 +480,9 @@ if (prefix && prefix.toUpperCase() === "PP") {
 } else if (prefix && prefix.toUpperCase() === "OP") {
   spokenPrefix = "O P";
 }
+  } else if (prefix && prefix.toUpperCase() === "OB") {
+  spokenPrefix = "O B";
+}
 else {
   spokenPrefix = prefix;
 }
@@ -780,6 +783,8 @@ function loadMCList() {
           spokenPrefix = "P I";
         } else if (prefix && prefix.toUpperCase() === "OP") {
           spokenPrefix = "O P";
+        } else if (prefix && prefix.toUpperCase() === "OB") {
+          spokenPrefix = "O B";
         } else {
           spokenPrefix = prefix || "";
         }
